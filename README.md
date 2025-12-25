@@ -1,41 +1,45 @@
-# Anime Filter App - Transforme Fotos em Arte Anime com IA
+# Anime Filter App - 100% GRATUITO 🎉
 
-Uma aplicação web moderna que transforma suas fotos em ilustrações estilo anime usando modelos de Inteligência Artificial avançados.
+Uma aplicação web moderna que transforma suas fotos em ilustrações estilo anime usando IA **TOTALMENTE GRATUITA!**
+
+## ✨ Destaques
+
+- 🆓 **100% GRATUITO** - Sem custos, sem créditos, sem limites de pagamento
+- 🤖 **IA Real** - Usa Hugging Face Inference API
+- 🎨 **Qualidade Profissional** - Modelos de anime de alta qualidade
+- 🚀 **Deploy Fácil** - Um clique no Vercel
+- 📱 **Responsivo** - Funciona perfeitamente em mobile e desktop
+- 🔒 **Privado** - Processamento via API pública da Hugging Face
 
 ## Funcionalidades
 
 - Upload de imagens (JPG, PNG, WebP)
 - Conversão real para estilo anime/ilustração usando IA
+- Redimensionamento automático e otimização
 - Visualização lado a lado (original vs anime)
 - Download da imagem transformada
 - Interface responsiva e moderna
-- Processamento via API Replicate com modelos de IA state-of-the-art
+- **SEM custos ou limites de crédito!**
 
 ## Tecnologias Utilizadas
 
 - **Next.js 14** - Framework React com App Router
 - **TypeScript** - Tipagem estática
 - **Tailwind CSS** - Estilização moderna
-- **Replicate API** - Modelos de IA para transformação em anime
-- **Vercel** - Hospedagem e deployment
+- **Hugging Face Inference API** - IA gratuita para transformação em anime
+- **Vercel** - Hospedagem gratuita
 
 ## Como Funciona
 
-A aplicação usa modelos de IA especializados (via Replicate API) que:
+A aplicação usa a **Hugging Face Inference API** que é **100% GRATUITA**:
 
-1. Analisam sua foto usando redes neurais convolucionais
-2. Identificam características faciais e estruturas
-3. Aplicam estilo de ilustração anime/cartoon
-4. Preservam a identidade mantendo o estilo artístico
-5. Retornam uma imagem de alta qualidade no estilo desejado
+1. Você faz upload de uma foto
+2. Imagem é automaticamente redimensionada e otimizada
+3. Enviada para modelos de IA especializados em anime (gratuitos)
+4. IA transforma em estilo anime/manga profissional
+5. Você baixa o resultado em alta qualidade
 
-## Pré-requisitos
-
-Para usar esta aplicação, você precisa de uma conta Replicate:
-
-1. Crie uma conta gratuita em [replicate.com](https://replicate.com)
-2. Obtenha sua API token em [replicate.com/account/api-tokens](https://replicate.com/account/api-tokens)
-3. Replicate oferece créditos gratuitos para começar
+**Sem cadastro, sem créditos, sem pagamentos!**
 
 ## Instalação Local
 
@@ -49,27 +53,13 @@ cd Image_Changet
 # Instalar dependências
 npm install
 
-# Configurar variáveis de ambiente
-cp .env.example .env
-
-# Editar .env e adicionar seu REPLICATE_API_TOKEN
-# REPLICATE_API_TOKEN=r8_...
-```
-
-Edite o arquivo `.env` e adicione seu token da Replicate:
-
-```
-REPLICATE_API_TOKEN=r8_seu_token_aqui
-```
-
-```bash
 # Executar em modo de desenvolvimento
 npm run dev
 ```
 
 Abra [http://localhost:3000](http://localhost:3000) no navegador.
 
-## Deploy no Vercel
+## Deploy no Vercel (GRATUITO)
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
 
@@ -78,28 +68,19 @@ Abra [http://localhost:3000](http://localhost:3000) no navegador.
 1. Faça push do código para seu repositório GitHub
 2. Acesse [vercel.com](https://vercel.com) e faça login
 3. Clique em "New Project" e importe seu repositório
-4. **IMPORTANTE:** Antes de fazer deploy, adicione a variável de ambiente:
-   - Vá em "Environment Variables"
-   - Adicione: `REPLICATE_API_TOKEN` = `seu_token_aqui`
-5. Clique em "Deploy"
+4. Clique em "Deploy"
+
+**Pronto! Não precisa configurar nada!** ✨
 
 O Vercel detectará automaticamente que é um projeto Next.js e configurará tudo.
 
-### Adicionar API Token no Vercel:
-
-1. No painel do seu projeto no Vercel
-2. Vá em "Settings" > "Environment Variables"
-3. Adicione:
-   - **Name:** `REPLICATE_API_TOKEN`
-   - **Value:** Seu token do Replicate
-   - **Environment:** Production, Preview, Development
-4. Faça redeploy se necessário
+**Não precisa de variáveis de ambiente ou API keys!**
 
 ## Como Usar
 
 1. **Carregar Foto** - Clique no botão e selecione uma foto sua
 2. **Transformar** - Clique em "Transformar em Anime com IA"
-3. **Aguarde** - O processamento pode levar 30-60 segundos
+3. **Aguarde** - O processamento pode levar 20-60 segundos
 4. **Baixar** - Salve sua ilustração anime
 
 ## Estrutura do Projeto
@@ -108,13 +89,12 @@ O Vercel detectará automaticamente que é um projeto Next.js e configurará tud
 ├── app/
 │   ├── api/
 │   │   └── anime-filter/
-│   │       └── route.ts       # API route para processar imagens
+│   │       └── route.ts       # API route com Hugging Face
 │   ├── layout.tsx             # Layout principal
 │   ├── page.tsx               # Página inicial com UI
 │   └── globals.css            # Estilos globais
 ├── next.config.js             # Configuração Next.js
 ├── tailwind.config.js         # Configuração Tailwind
-├── .env.example               # Exemplo de variáveis de ambiente
 └── package.json               # Dependências
 ```
 
@@ -127,32 +107,55 @@ npm run start    # Servidor de produção
 npm run lint     # Linter
 ```
 
-## Modelos de IA Utilizados
+## Sobre a API Gratuita
 
-A aplicação usa o modelo **SDXL Toonify** via Replicate, que é especializado em:
-- Conversão de fotos realistas para estilo cartoon/anime
-- Preservação de características faciais
-- Alta qualidade de output
-- Estilo consistente e artístico
+### Hugging Face Inference API
 
-## Custos
+- ✅ **Completamente gratuita**
+- ✅ **Sem limites de crédito**
+- ✅ **Modelos de alta qualidade**
+- ✅ **Não requer autenticação**
+- ⚠️ Pode ter rate limits (mas muito generosos)
+- ⚠️ Modelo pode levar 10-20s para inicializar se inativo
 
-- **Replicate:** Oferece créditos gratuitos iniciais. Após isso, cobra por uso (consulte [replicate.com/pricing](https://replicate.com/pricing))
-- **Vercel:** Tier gratuito generoso para projetos pessoais
+### Limitações:
+
+- Primeira requisição pode ser lenta (modelo carregando)
+- Rate limits em uso muito intenso (raramente atingido)
+- Processamento pode levar 30-60 segundos
+
+**Mas é 100% gratuito para sempre!** 🎉
 
 ## Problemas Comuns
 
-### "API token não configurada"
-- Verifique se adicionou `REPLICATE_API_TOKEN` no arquivo `.env` (local) ou nas variáveis de ambiente do Vercel (produção)
+### "Modelo está inicializando"
+- O modelo estava inativo e está sendo carregado
+- Aguarde 10-20 segundos e tente novamente
+- Isso só acontece na primeira vez
 
-### "Erro ao processar imagem"
-- Verifique se sua conta Replicate tem créditos disponíveis
-- Tente com uma imagem menor (< 5MB)
-- Verifique sua conexão com internet
+### "Muitas requisições"
+- Rate limit temporário foi atingido
+- Aguarde alguns minutos
+- Isso é raro em uso normal
 
-### Tempo de processamento longo
-- Modelos de IA podem levar 30-60 segundos
-- Isso é normal e depende da fila de processamento da Replicate
+### Processamento lento
+- Modelos de IA levam tempo
+- 30-60 segundos é normal
+- A qualidade compensa a espera!
+
+## Custos
+
+### Hugging Face:
+- **GRATUITO** ✨
+- Sem limites de crédito
+- Sem necessidade de cadastro ou autenticação
+
+### Vercel:
+- **GRATUITO** (plano Hobby)
+- Inclui domínio `.vercel.app` grátis
+- Deploy automático a cada push
+
+**Total: R$ 0,00 para sempre!** 🚀
 
 ## Licença
 
@@ -161,3 +164,13 @@ MIT
 ## Autor
 
 Criado com Claude Code
+
+---
+
+## 🎯 Deploy Rápido
+
+**Clique aqui e em 2 minutos está no ar:**
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Jonhk321/Image_Changet)
+
+**100% GRATUITO - Sem pegadinhas!** ✨
