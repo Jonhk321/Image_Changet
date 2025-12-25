@@ -12,15 +12,63 @@ export default function Home() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Verificar tamanho do arquivo (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Imagem muito grande. Tamanho máximo: 10MB')
+        return
+      }
+
       const reader = new FileReader()
       reader.onload = (event) => {
         const imageUrl = event.target?.result as string
-        setOriginalImage(imageUrl)
-        setFilteredImage(null)
-        setError(null)
+
+        // Redimensionar imagem se necessário
+        resizeImage(imageUrl, 1024, (resizedImage) => {
+          setOriginalImage(resizedImage)
+          setFilteredImage(null)
+          setError(null)
+        })
       }
       reader.readAsDataURL(file)
     }
+  }
+
+  const resizeImage = (
+    dataUrl: string,
+    maxSize: number,
+    callback: (resizedDataUrl: string) => void
+  ) => {
+    const img = new Image()
+    img.onload = () => {
+      let width = img.width
+      let height = img.height
+
+      // Redimensionar se maior que maxSize
+      if (width > maxSize || height > maxSize) {
+        if (width > height) {
+          height = (height / width) * maxSize
+          width = maxSize
+        } else {
+          width = (width / height) * maxSize
+          height = maxSize
+        }
+      }
+
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height)
+        // Converter para JPEG com qualidade 0.9 para reduzir tamanho
+        const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.9)
+        callback(resizedDataUrl)
+      } else {
+        callback(dataUrl)
+      }
+    }
+    img.src = dataUrl
   }
 
   const handleApplyFilter = async () => {
