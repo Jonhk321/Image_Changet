@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     // Usar Hugging Face Inference API (100% GRATUITO!)
     // Modelo: stable-diffusion com anime style
-    const HF_API_URL = 'https://api-inference.huggingface.co/models/XpucT/Deliberate'
+    const HF_API_URL = 'https://router.huggingface.co/models/XpucT/Deliberate'
 
     const response = await fetch(HF_API_URL, {
       method: 'POST',
