@@ -90,24 +90,117 @@ export default function Home() {
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
         const data = imgData.data
 
-        // Aplicar efeito anime: posterização + saturação
-        for (let i = 0; i < data.length; i += 4) {
-          // Posterização (reduzir cores)
-          const levels = 32
-          data[i] = Math.floor(data[i] / levels) * levels
-          data[i + 1] = Math.floor(data[i + 1] / levels) * levels
-          data[i + 2] = Math.floor(data[i + 2] / levels) * levels
+        // FILTRO ANIME AVANÇADO - Múltiplos passos para qualidade superior
 
-          // Aumentar saturação
-          const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
-          const saturation = 1.5
-          data[i] = Math.min(255, Math.max(0, gray + saturation * (data[i] - gray)))
-          data[i + 1] = Math.min(255, Math.max(0, gray + saturation * (data[i + 1] - gray)))
-          data[i + 2] = Math.min(255, Math.max(0, gray + saturation * (data[i + 2] - gray)))
+        // Passo 1: Suavização de pele (tons de pele)
+        for (let y = 1; y < canvas.height - 1; y++) {
+          for (let x = 1; x < canvas.width - 1; x++) {
+            const i = (y * canvas.width + x) * 4
+            const r = data[i]
+            const g = data[i + 1]
+            const b = data[i + 2]
+
+            // Detectar tons de pele
+            if (r > 95 && g > 40 && b > 20 && r > g && r > b) {
+              // Aplicar blur suave
+              let avgR = 0, avgG = 0, avgB = 0, count = 0
+              for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                  const ni = ((y + dy) * canvas.width + (x + dx)) * 4
+                  avgR += data[ni]
+                  avgG += data[ni + 1]
+                  avgB += data[ni + 2]
+                  count++
+                }
+              }
+              data[i] = (data[i] + avgR / count) / 2
+              data[i + 1] = (data[i + 1] + avgG / count) / 2
+              data[i + 2] = (data[i + 2] + avgB / count) / 2
+            }
+          }
+        }
+
+        // Passo 2: Posterização inteligente (redução de cores)
+        for (let i = 0; i < data.length; i += 4) {
+          const levels = 20 // Mais níveis para transição suave
+          data[i] = Math.round(data[i] / levels) * levels
+          data[i + 1] = Math.round(data[i + 1] / levels) * levels
+          data[i + 2] = Math.round(data[i + 2] / levels) * levels
+        }
+
+        // Passo 3: Aumentar saturação e vibração
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i]
+          const g = data[i + 1]
+          const b = data[i + 2]
+
+          const gray = 0.299 * r + 0.587 * g + 0.114 * b
+          const saturation = 1.6 // Saturação forte
+
+          data[i] = Math.min(255, Math.max(0, gray + saturation * (r - gray)))
+          data[i + 1] = Math.min(255, Math.max(0, gray + saturation * (g - gray)))
+          data[i + 2] = Math.min(255, Math.max(0, gray + saturation * (b - gray)))
+        }
+
+        // Passo 4: Aumentar contraste
+        for (let i = 0; i < data.length; i += 4) {
+          const contrast = 1.3
+          const factor = (259 * (contrast * 100 + 255)) / (255 * (259 - contrast * 100))
+
+          data[i] = Math.min(255, Math.max(0, factor * (data[i] - 128) + 128))
+          data[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128))
+          data[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128))
+        }
+
+        // Passo 5: Brightening (iluminação)
+        for (let i = 0; i < data.length; i += 4) {
+          data[i] = Math.min(255, data[i] * 1.1)
+          data[i + 1] = Math.min(255, data[i + 1] * 1.1)
+          data[i + 2] = Math.min(255, data[i + 2] * 1.1)
         }
 
         ctx.putImageData(imgData, 0, 0)
-        resolve(canvas.toDataURL('image/png'))
+
+        // Passo 6: Edge enhancement (contornos)
+        const tempCanvas = document.createElement('canvas')
+        const tempCtx = tempCanvas.getContext('2d')
+        if (tempCtx) {
+          tempCanvas.width = canvas.width
+          tempCanvas.height = canvas.height
+          tempCtx.drawImage(canvas, 0, 0)
+
+          const imageData2 = tempCtx.getImageData(0, 0, canvas.width, canvas.height)
+          const data2 = imageData2.data
+
+          // Detectar bordas
+          for (let y = 1; y < canvas.height - 1; y++) {
+            for (let x = 1; x < canvas.width - 1; x++) {
+              const i = (y * canvas.width + x) * 4
+
+              // Sobel operator
+              const gx =
+                -data2[((y-1)*canvas.width + (x-1))*4] + data2[((y-1)*canvas.width + (x+1))*4] +
+                -2*data2[(y*canvas.width + (x-1))*4] + 2*data2[(y*canvas.width + (x+1))*4] +
+                -data2[((y+1)*canvas.width + (x-1))*4] + data2[((y+1)*canvas.width + (x+1))*4]
+
+              const gy =
+                -data2[((y-1)*canvas.width + (x-1))*4] - 2*data2[((y-1)*canvas.width + x)*4] - data2[((y-1)*canvas.width + (x+1))*4] +
+                data2[((y+1)*canvas.width + (x-1))*4] + 2*data2[((y+1)*canvas.width + x)*4] + data2[((y+1)*canvas.width + (x+1))*4]
+
+              const magnitude = Math.sqrt(gx*gx + gy*gy)
+
+              if (magnitude > 50) { // Borda detectada
+                imgData.data[i] = Math.max(0, imgData.data[i] - 30)
+                imgData.data[i+1] = Math.max(0, imgData.data[i+1] - 30)
+                imgData.data[i+2] = Math.max(0, imgData.data[i+2] - 30)
+              }
+            }
+          }
+
+          ctx.putImageData(imgData, 0, 0)
+        }
+
+        resolve(canvas.toDataURL('image/png', 0.95))
       }
       img.src = imageData
     })
@@ -120,42 +213,13 @@ export default function Home() {
     setError(null)
 
     try {
-      // Tentar usar a API primeiro
-      const response = await fetch('/api/anime-filter', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ image: originalImage }),
-      })
-
-      const data = await response.json()
-
-      // Se API retornar erro mas sugerir usar client-side, usa filtro local
-      if (!response.ok && data.useClientSide) {
-        console.log('Usando filtro client-side...')
-        const filtered = await applyClientSideFilter(originalImage)
-        setFilteredImage(filtered)
-        setError('Usando filtro local (sem IA). Para qualidade superior, configure o token do Hugging Face.')
-        return
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao processar a imagem')
-      }
-
-      setFilteredImage(data.output)
+      // Usar SEMPRE o filtro client-side melhorado
+      console.log('Aplicando filtro anime avançado...')
+      const filtered = await applyClientSideFilter(originalImage)
+      setFilteredImage(filtered)
     } catch (error: any) {
       console.error('Erro ao aplicar filtro:', error)
-      // Em caso de erro de rede, usar filtro client-side
-      console.log('Erro de API, usando filtro client-side como fallback...')
-      try {
-        const filtered = await applyClientSideFilter(originalImage)
-        setFilteredImage(filtered)
-        setError('Usando filtro local (sem IA). Resultado pode ser diferente.')
-      } catch (filterError) {
-        setError('Erro ao processar a imagem')
-      }
+      setError('Erro ao processar a imagem')
     } finally {
       setIsProcessing(false)
     }
@@ -233,7 +297,7 @@ export default function Home() {
                   disabled={isProcessing}
                   className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  {isProcessing ? 'Transformando em Anime... (pode levar até 60s)' : 'Transformar em Anime com IA'}
+                  {isProcessing ? 'Transformando em Anime...' : 'Transformar em Anime'}
                 </button>
 
                 {filteredImage && (
