@@ -213,7 +213,7 @@ export default function Home() {
     setError(null)
 
     try {
-      // Tentar API primeiro
+      // Tentar API com múltiplos endpoints
       const response = await fetch('/api/anime-filter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -223,10 +223,10 @@ export default function Home() {
       const data = await response.json()
 
       if (!response.ok && data.useClientSide) {
-        console.log('API falhou, usando filtro local...')
+        console.log('Todas as APIs falharam, usando filtro local...')
         const filtered = await applyClientSideFilter(originalImage)
         setFilteredImage(filtered)
-        setError('API temporariamente indisponível. Usando filtro local.')
+        setError('⚠️ APIs de IA indisponíveis. Usando filtro local (qualidade reduzida).')
         return
       }
 
@@ -235,14 +235,15 @@ export default function Home() {
       }
 
       setFilteredImage(data.output)
+      setError(null) // Limpar erro se sucesso
     } catch (error: any) {
       console.error('Erro:', error)
       try {
         const filtered = await applyClientSideFilter(originalImage)
         setFilteredImage(filtered)
-        setError('Fallback: usando filtro local.')
+        setError('⚠️ Erro de conexão. Usando filtro local.')
       } catch {
-        setError('Erro ao processar a imagem')
+        setError('❌ Erro ao processar a imagem')
       }
     } finally {
       setIsProcessing(false)

@@ -42,13 +42,17 @@ A aplicação oferece **DUAS OPÇÕES**:
 - 🎨 **Bom resultado** - Efeito anime/cartoon
 - 📱 **Totalmente offline** - Processa no navegador
 
-### Opção 2: IA AnimeGANv2 (Automático)
-- 🤖 **Qualidade profissional** - AnimeGANv2 treinado especificamente para foto→anime
+### Opção 2: IA AnimeGANv2 (Automático com Fallback Inteligente)
+- 🤖 **Qualidade profissional** - AnimeGANv2 com 3 estilos diferentes
+  - **Hayao**: Estilo Studio Ghibli (Hayao Miyazaki)
+  - **Paprika**: Estilo colorido e vibrante
+  - **Shinkai**: Estilo Makoto Shinkai (Your Name)
 - 🆓 **Gratuito sem configuração** - API pública do Hugging Face
 - ⏱️ **10-30 segundos** - Processamento via API
-- 🎯 **Resultado autêntico** - Estilo anime de verdade
+- 🎯 **Resultado autêntico** - Transformação real em anime
+- 🔄 **Sistema de fallback** - Tenta automaticamente 3 endpoints diferentes
 
-**A aplicação tenta a IA primeiro!** Se a API estiver ocupada, usa o filtro local como fallback.
+**Como funciona:** A aplicação tenta automaticamente os 3 modelos em ordem. Se um estiver ocupado, passa para o próximo instantaneamente. Só usa o filtro local se todos estiverem indisponíveis!
 
 ## Instalação Local
 
@@ -128,22 +132,42 @@ npm run lint     # Linter
 
 **Recomendação:** A aplicação usa automaticamente a IA AnimeGANv2. Se a API estiver ocupada, cai para o filtro local!
 
+## Estilos de Anime Disponíveis
+
+A aplicação tenta automaticamente 3 estilos diferentes de AnimeGANv2:
+
+### 🎨 Hayao (Studio Ghibli)
+- Estilo inspirado em Hayao Miyazaki
+- Cores suaves e pastéis
+- Visual nostálgico e aquarelado
+- Melhor para: Paisagens e retratos artísticos
+
+### 🌸 Paprika
+- Estilo vibrante e colorido
+- Cores saturadas e vivas
+- Visual moderno e energético
+- Melhor para: Fotos com cores fortes
+
+### ✨ Shinkai (Your Name)
+- Estilo inspirado em Makoto Shinkai
+- Iluminação dramática
+- Visual cinematográfico
+- Melhor para: Cenas com luz e sombra
+
+**A aplicação tenta os 3 automaticamente** e usa o primeiro que estiver disponível!
+
 ## Problemas Comuns
 
-### "Modelo está inicializando"
-- O modelo estava inativo e está sendo carregado
-- Aguarde 10-20 segundos e tente novamente
-- Isso só acontece na primeira vez
-
-### "Muitas requisições"
-- Rate limit temporário foi atingido
-- Aguarde alguns minutos
-- Isso é raro em uso normal
+### "APIs de IA indisponíveis"
+- Todos os 3 modelos estão temporariamente ocupados
+- A aplicação automaticamente usa o filtro local
+- Tente novamente em alguns minutos
+- O sistema de fallback garante que sempre funcione!
 
 ### Processamento lento
-- Modelos de IA levam tempo
-- 30-60 segundos é normal
-- A qualidade compensa a espera!
+- Modelos de IA levam 10-30 segundos
+- Se demorar muito, pode ser que o modelo esteja frio (primeira execução)
+- O sistema tenta automaticamente outro modelo se um demorar demais
 
 ## Custos
 

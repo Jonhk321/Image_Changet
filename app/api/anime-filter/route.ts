@@ -2,6 +2,51 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const maxDuration = 60
 
+// Lista de endpoints para tentar em ordem (fallback automático)
+const ANIME_ENDPOINTS = [
+  {
+    name: 'AnimeGANv2 - Hayao',
+    url: 'https://akhaliq-animeganv2.hf.space/api/predict',
+    format: 'gradio',
+  },
+  {
+    name: 'AnimeGANv2 - Paprika',
+    url: 'https://huggingface.co/spaces/akhaliq/AnimeGANv2-Paprika/api/predict',
+    format: 'gradio',
+  },
+  {
+    name: 'AnimeGANv2 - Shinkai',
+    url: 'https://huggingface.co/spaces/akhaliq/AnimeGANv2-Shinkai/api/predict',
+    format: 'gradio',
+  },
+]
+
+async function tryAnimeEndpoint(endpoint: typeof ANIME_ENDPOINTS[0], base64Data: string) {
+  console.log(`Tentando ${endpoint.name}...`)
+
+  const response = await fetch(endpoint.url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      data: [`data:image/jpeg;base64,${base64Data}`]
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`)
+  }
+
+  const result = await response.json()
+
+  if (!result.data || !result.data[0]) {
+    throw new Error('Resposta inválida')
+  }
+
+  return result.data[0]
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { image } = await request.json()
@@ -20,51 +65,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Processando com AnimeGANv2 (modelo gratuito)...')
+    console.log('Iniciando transformação anime com fallback multi-endpoint...')
 
     // Converter data URI para buffer
     const base64Data = image.split(',')[1]
 
-    // Usar API do Hugging Face Spaces com modelo anime dedicado
-    // AnimeGANv2 é específico para transformação foto->anime
-    const HF_SPACE_API = 'https://akhaliq-animeganv2.hf.space/api/predict'
+    // Tentar cada endpoint em ordem
+    let lastError: Error | null = null
 
-    const response = await fetch(HF_SPACE_API, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        data: [`data:image/jpeg;base64,${base64Data}`]
-      }),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Erro HuggingFace Space:', errorText)
-
-      if (response.status === 503) {
-        return NextResponse.json(
-          { error: 'Modelo carregando. Tente em 20 segundos.', useClientSide: true },
-          { status: 503 }
-        )
+    for (const endpoint of ANIME_ENDPOINTS) {
+      try {
+        const resultUrl = await tryAnimeEndpoint(endpoint, base64Data)
+        console.log(`✓ Sucesso com ${endpoint.name}!`)
+        return NextResponse.json({ output: resultUrl })
+      } catch (error: any) {
+        console.log(`✗ ${endpoint.name} falhou: ${error.message}`)
+        lastError = error
+        // Continua para o próximo endpoint
       }
-
-      throw new Error(`Erro: ${response.status}`)
     }
 
-    const result = await response.json()
-
-    // Gradio retorna { data: [imageDataUrl] }
-    if (!result.data || !result.data[0]) {
-      throw new Error('Resposta inválida do modelo')
-    }
-
-    const resultUrl = result.data[0]
-
-    console.log('Processamento concluído com AnimeGANv2!')
-
-    return NextResponse.json({ output: resultUrl })
+    // Se chegou aqui, todos os endpoints falharam
+    console.error('Todos os endpoints falharam, usando fallback client-side')
+    return NextResponse.json(
+      {
+        error: `Todas as APIs estão indisponíveis no momento. Último erro: ${lastError?.message}`,
+        useClientSide: true
+      },
+      { status: 503 }
+    )
   } catch (error: any) {
     console.error('Erro:', error)
     return NextResponse.json(
