@@ -1,13 +1,12 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { applyAnimeFilter } from '@/lib/animeFilter'
 
 export default function Home() {
   const [originalImage, setOriginalImage] = useState<string | null>(null)
   const [filteredImage, setFilteredImage] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [filterIntensity, setFilterIntensity] = useState(50)
+  const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -18,6 +17,7 @@ export default function Home() {
         const imageUrl = event.target?.result as string
         setOriginalImage(imageUrl)
         setFilteredImage(null)
+        setError(null)
       }
       reader.readAsDataURL(file)
     }
@@ -27,12 +27,27 @@ export default function Home() {
     if (!originalImage) return
 
     setIsProcessing(true)
+    setError(null)
+
     try {
-      const filtered = await applyAnimeFilter(originalImage, filterIntensity)
-      setFilteredImage(filtered)
-    } catch (error) {
+      const response = await fetch('/api/anime-filter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image: originalImage }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao processar a imagem')
+      }
+
+      setFilteredImage(data.output)
+    } catch (error: any) {
       console.error('Erro ao aplicar filtro:', error)
-      alert('Erro ao processar a imagem')
+      setError(error.message || 'Erro ao processar a imagem')
     } finally {
       setIsProcessing(false)
     }
@@ -52,6 +67,7 @@ export default function Home() {
   const handleReset = () => {
     setOriginalImage(null)
     setFilteredImage(null)
+    setError(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -66,8 +82,14 @@ export default function Home() {
             Anime Filter
           </h1>
           <p className="text-gray-600 dark:text-gray-300 text-lg">
-            Transforme suas fotos em arte estilo anime
+            Transforme suas fotos em arte estilo anime usando IA
           </p>
+          {error && (
+            <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+              <p className="font-semibold">Erro:</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
         </div>
 
         {/* Upload Section */}
@@ -97,27 +119,13 @@ export default function Home() {
         {originalImage && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-8">
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Intensidade do Filtro: {filterIntensity}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={filterIntensity}
-                  onChange={(e) => setFilterIntensity(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                />
-              </div>
-
               <div className="flex gap-4 flex-wrap">
                 <button
                   onClick={handleApplyFilter}
                   disabled={isProcessing}
                   className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  {isProcessing ? 'Processando...' : 'Aplicar Filtro Anime'}
+                  {isProcessing ? 'Transformando em Anime... (pode levar até 60s)' : 'Transformar em Anime com IA'}
                 </button>
 
                 {filteredImage && (
@@ -161,19 +169,28 @@ export default function Home() {
             {/* Filtered Image */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4">
               <h2 className="text-xl font-semibold mb-4 text-center">
-                Com Filtro Anime
+                Estilo Anime/Ilustração
               </h2>
               <div className="relative aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
                 {filteredImage ? (
                   <img
                     src={filteredImage}
-                    alt="Filtered"
+                    alt="Anime Style"
                     className="w-full h-full object-contain rounded-lg"
                   />
                 ) : (
-                  <p className="text-gray-400">
-                    {isProcessing ? 'Processando...' : 'Clique em "Aplicar Filtro"'}
-                  </p>
+                  <div className="text-center p-4">
+                    <p className="text-gray-400">
+                      {isProcessing ? (
+                        <>
+                          <span className="block mb-2">Transformando com IA...</span>
+                          <span className="text-sm">Isso pode levar até 60 segundos</span>
+                        </>
+                      ) : (
+                        'Clique em "Transformar em Anime"'
+                      )}
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
@@ -194,9 +211,9 @@ export default function Home() {
               </div>
               <div>
                 <div className="text-4xl mb-2">🎨</div>
-                <h3 className="font-semibold mb-2">2. Ajuste</h3>
+                <h3 className="font-semibold mb-2">2. Transforme</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Configure a intensidade do filtro
+                  Deixe a IA criar o estilo anime
                 </p>
               </div>
               <div>
