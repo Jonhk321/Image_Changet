@@ -213,13 +213,37 @@ export default function Home() {
     setError(null)
 
     try {
-      // Usar SEMPRE o filtro client-side melhorado
-      console.log('Aplicando filtro anime avançado...')
-      const filtered = await applyClientSideFilter(originalImage)
-      setFilteredImage(filtered)
+      // Tentar API primeiro
+      const response = await fetch('/api/anime-filter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: originalImage }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok && data.useClientSide) {
+        console.log('API falhou, usando filtro local...')
+        const filtered = await applyClientSideFilter(originalImage)
+        setFilteredImage(filtered)
+        setError('Usando filtro local. Configure o token HF para IA profissional.')
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao processar')
+      }
+
+      setFilteredImage(data.output)
     } catch (error: any) {
-      console.error('Erro ao aplicar filtro:', error)
-      setError('Erro ao processar a imagem')
+      console.error('Erro:', error)
+      try {
+        const filtered = await applyClientSideFilter(originalImage)
+        setFilteredImage(filtered)
+        setError('Fallback: usando filtro local.')
+      } catch {
+        setError('Erro ao processar a imagem')
+      }
     } finally {
       setIsProcessing(false)
     }

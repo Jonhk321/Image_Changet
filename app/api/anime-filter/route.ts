@@ -13,35 +13,30 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validar formato da imagem (deve ser data URI)
     if (!image.startsWith('data:image/')) {
       return NextResponse.json(
-        { error: 'Formato de imagem inválido. Deve ser um data URI.' },
+        { error: 'Formato de imagem inválido' },
         { status: 400 }
       )
     }
 
-    // Verificar se há token HF configurado (opcional)
     const hfToken = process.env.HUGGINGFACE_TOKEN
 
     if (!hfToken) {
       return NextResponse.json(
-        {
-          error: 'API do Hugging Face requer token. Use o filtro client-side ou configure HUGGINGFACE_TOKEN nas variáveis de ambiente.',
-          useClientSide: true
-        },
+        { error: 'Token do Hugging Face não configurado', useClientSide: true },
         { status: 400 }
       )
     }
 
-    console.log('Iniciando processamento com Hugging Face...')
+    console.log('Processando com modelo anime profissional...')
 
-    // Converter data URI para Blob
+    // Converter data URI para buffer
     const base64Data = image.split(',')[1]
-    const binaryData = Buffer.from(base64Data, 'base64')
+    const imageBuffer = Buffer.from(base64Data, 'base64')
 
-    // Usar Hugging Face Inference API com autenticação
-    const HF_API_URL = 'https://api-inference.huggingface.co/models/XpucT/Deliberate'
+    // Usar modelo AnimeGAN para conversão profissional
+    const HF_API_URL = 'https://api-inference.huggingface.co/models/cagliostrolab/animagine-xl-3.1'
 
     const response = await fetch(HF_API_URL, {
       method: 'POST',
@@ -50,58 +45,42 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputs: "anime style, manga illustration, beautiful anime art, vibrant colors, detailed, high quality, professional anime artwork, studio quality, masterpiece",
+        inputs: imageBuffer.toString('base64'),
         parameters: {
-          negative_prompt: "realistic, photographic, photo, 3d render, blurry, low quality, ugly, distorted, deformed, nsfw",
-          num_inference_steps: 30,
+          prompt: "anime illustration, professional digital art, vibrant colors, detailed anime style, high quality anime artwork, beautiful illustration, masterpiece",
+          negative_prompt: "realistic, photo, photograph, 3d, blurry, low quality, watermark, text",
+          num_inference_steps: 50,
           guidance_scale: 7.5,
+          strength: 0.75,
         }
       }),
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Erro da Hugging Face:', errorText)
+      console.error('Erro HuggingFace:', errorText)
 
       if (response.status === 503) {
         return NextResponse.json(
-          { error: 'Modelo está inicializando. Tente novamente em 10-20 segundos.' },
+          { error: 'Modelo carregando. Tente em 20 segundos.', useClientSide: true },
           { status: 503 }
         )
       }
 
-      if (response.status === 401) {
-        return NextResponse.json(
-          { error: 'Token inválido. Verifique seu token do Hugging Face.', useClientSide: true },
-          { status: 401 }
-        )
-      }
-
-      throw new Error(`Erro ao processar: ${errorText}`)
+      throw new Error(`Erro: ${response.status}`)
     }
 
-    const imageBuffer = await response.arrayBuffer()
-    const base64Image = Buffer.from(imageBuffer).toString('base64')
-    const resultUrl = `data:image/png;base64,${base64Image}`
+    const resultBuffer = await response.arrayBuffer()
+    const base64Result = Buffer.from(resultBuffer).toString('base64')
+    const resultUrl = `data:image/png;base64,${base64Result}`
 
     console.log('Processamento concluído!')
 
     return NextResponse.json({ output: resultUrl })
   } catch (error: any) {
-    console.error('Erro detalhado ao processar imagem:', error)
-
-    let errorMessage = 'Erro ao processar imagem'
-
-    if (error.message?.includes('rate limit')) {
-      errorMessage = 'Muitas requisições. Aguarde alguns minutos e tente novamente.'
-    } else if (error.message?.includes('loading')) {
-      errorMessage = 'Modelo está carregando. Tente novamente em 10-20 segundos.'
-    } else if (error.message) {
-      errorMessage = error.message
-    }
-
+    console.error('Erro:', error)
     return NextResponse.json(
-      { error: errorMessage, useClientSide: true },
+      { error: error.message || 'Erro ao processar', useClientSide: true },
       { status: 500 }
     )
   }
