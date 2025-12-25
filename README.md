@@ -1,15 +1,17 @@
 # Anime Filter App - 100% GRATUITO 🎉
 
-Uma aplicação web moderna que transforma suas fotos em ilustrações estilo anime usando IA **TOTALMENTE GRATUITA!**
+Uma aplicação web moderna que transforma suas fotos em ilustrações estilo anime com **DUAS OPÇÕES**:
+- ⚡ **Filtro instantâneo** (client-side, sem configuração)
+- 🤖 **IA profissional** (Hugging Face, token gratuito opcional)
 
 ## ✨ Destaques
 
-- 🆓 **100% GRATUITO** - Sem custos, sem créditos, sem limites de pagamento
-- 🤖 **IA Real** - Usa Hugging Face Inference API
-- 🎨 **Qualidade Profissional** - Modelos de anime de alta qualidade
+- 🆓 **100% GRATUITO** - Funciona sem configuração nenhuma!
+- ⚡ **Instantâneo** - Filtro client-side processa em segundos
+- 🤖 **IA Opcional** - Use Hugging Face para qualidade superior (gratuito)
 - 🚀 **Deploy Fácil** - Um clique no Vercel
 - 📱 **Responsivo** - Funciona perfeitamente em mobile e desktop
-- 🔒 **Privado** - Processamento via API pública da Hugging Face
+- 🔒 **Privado** - Processamento local ou via API
 
 ## Funcionalidades
 
@@ -31,15 +33,21 @@ Uma aplicação web moderna que transforma suas fotos em ilustrações estilo an
 
 ## Como Funciona
 
-A aplicação usa a **Hugging Face Inference API** que é **100% GRATUITA**:
+A aplicação oferece **DUAS OPÇÕES**:
 
-1. Você faz upload de uma foto
-2. Imagem é automaticamente redimensionada e otimizada
-3. Enviada para modelos de IA especializados em anime (gratuitos)
-4. IA transforma em estilo anime/manga profissional
-5. Você baixa o resultado em alta qualidade
+### Opção 1: Filtro Client-Side (Padrão)
+- ⚡ **Instantâneo** - Processa em 1-2 segundos
+- 🆓 **Sem configuração** - Funciona imediatamente
+- 🎨 **Bom resultado** - Efeito anime/cartoon
+- 📱 **Totalmente offline** - Processa no navegador
 
-**Sem cadastro, sem créditos, sem pagamentos!**
+### Opção 2: IA do Hugging Face (Opcional)
+- 🤖 **Qualidade superior** - IA profissional
+- 🆓 **Gratuito** - Token gratuito do Hugging Face
+- ⏱️ **30-60 segundos** - Processamento via API
+- 🎯 **Resultado realista** - Estilo anime autêntico
+
+**A aplicação escolhe automaticamente:** Se não houver token configurado, usa o filtro instantâneo!
 
 ## Instalação Local
 
@@ -63,18 +71,27 @@ Abra [http://localhost:3000](http://localhost:3000) no navegador.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
 
-### Passos para Deploy:
+### Deploy Básico (Filtro Instantâneo):
 
 1. Faça push do código para seu repositório GitHub
 2. Acesse [vercel.com](https://vercel.com) e faça login
 3. Clique em "New Project" e importe seu repositório
 4. Clique em "Deploy"
 
-**Pronto! Não precisa configurar nada!** ✨
+**Pronto! Funciona instantaneamente!** ✨
 
-O Vercel detectará automaticamente que é um projeto Next.js e configurará tudo.
+### Deploy Avançado (Com IA do Hugging Face):
 
-**Não precisa de variáveis de ambiente ou API keys!**
+Se quiser qualidade superior com IA:
+
+1. Crie conta em [huggingface.co](https://huggingface.co) (grátis)
+2. Gere token em: [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
+3. No Vercel, adicione variável de ambiente:
+   - **Name:** `HUGGINGFACE_TOKEN`
+   - **Value:** Seu token
+4. Redeploy
+
+**Ambas opções são 100% gratuitas!**
 
 ## Como Usar
 
@@ -107,24 +124,18 @@ npm run start    # Servidor de produção
 npm run lint     # Linter
 ```
 
-## Sobre a API Gratuita
+## Comparação: Filtro vs IA
 
-### Hugging Face Inference API
+| Característica | Filtro Client-Side | IA Hugging Face |
+|---------------|-------------------|-----------------|
+| **Velocidade** | ⚡ 1-2 segundos | ⏱️ 30-60 segundos |
+| **Configuração** | ✅ Nenhuma | 📝 Token gratuito |
+| **Qualidade** | 🎨 Boa | 🤖 Excelente |
+| **Custo** | 🆓 Grátis | 🆓 Grátis |
+| **Offline** | ✅ Funciona | ❌ Precisa internet |
+| **Melhor para** | Testes rápidos | Resultado final |
 
-- ✅ **Completamente gratuita**
-- ✅ **Sem limites de crédito**
-- ✅ **Modelos de alta qualidade**
-- ✅ **Não requer autenticação**
-- ⚠️ Pode ter rate limits (mas muito generosos)
-- ⚠️ Modelo pode levar 10-20s para inicializar se inativo
-
-### Limitações:
-
-- Primeira requisição pode ser lenta (modelo carregando)
-- Rate limits em uso muito intenso (raramente atingido)
-- Processamento pode levar 30-60 segundos
-
-**Mas é 100% gratuito para sempre!** 🎉
+**Recomendação:** Comece com o filtro instantâneo, depois adicione o token para IA se quiser qualidade superior!
 
 ## Problemas Comuns
 

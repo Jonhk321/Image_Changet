@@ -71,6 +71,48 @@ export default function Home() {
     img.src = dataUrl
   }
 
+  const applyClientSideFilter = (imageData: string) => {
+    return new Promise<string>((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+
+        if (!ctx) {
+          resolve(imageData)
+          return
+        }
+
+        canvas.width = img.width
+        canvas.height = img.height
+        ctx.drawImage(img, 0, 0)
+
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const data = imgData.data
+
+        // Aplicar efeito anime: posterização + saturação
+        for (let i = 0; i < data.length; i += 4) {
+          // Posterização (reduzir cores)
+          const levels = 32
+          data[i] = Math.floor(data[i] / levels) * levels
+          data[i + 1] = Math.floor(data[i + 1] / levels) * levels
+          data[i + 2] = Math.floor(data[i + 2] / levels) * levels
+
+          // Aumentar saturação
+          const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
+          const saturation = 1.5
+          data[i] = Math.min(255, Math.max(0, gray + saturation * (data[i] - gray)))
+          data[i + 1] = Math.min(255, Math.max(0, gray + saturation * (data[i + 1] - gray)))
+          data[i + 2] = Math.min(255, Math.max(0, gray + saturation * (data[i + 2] - gray)))
+        }
+
+        ctx.putImageData(imgData, 0, 0)
+        resolve(canvas.toDataURL('image/png'))
+      }
+      img.src = imageData
+    })
+  }
+
   const handleApplyFilter = async () => {
     if (!originalImage) return
 
@@ -78,6 +120,7 @@ export default function Home() {
     setError(null)
 
     try {
+      // Tentar usar a API primeiro
       const response = await fetch('/api/anime-filter', {
         method: 'POST',
         headers: {
@@ -88,6 +131,15 @@ export default function Home() {
 
       const data = await response.json()
 
+      // Se API retornar erro mas sugerir usar client-side, usa filtro local
+      if (!response.ok && data.useClientSide) {
+        console.log('Usando filtro client-side...')
+        const filtered = await applyClientSideFilter(originalImage)
+        setFilteredImage(filtered)
+        setError('Usando filtro local (sem IA). Para qualidade superior, configure o token do Hugging Face.')
+        return
+      }
+
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao processar a imagem')
       }
@@ -95,7 +147,15 @@ export default function Home() {
       setFilteredImage(data.output)
     } catch (error: any) {
       console.error('Erro ao aplicar filtro:', error)
-      setError(error.message || 'Erro ao processar a imagem')
+      // Em caso de erro de rede, usar filtro client-side
+      console.log('Erro de API, usando filtro client-side como fallback...')
+      try {
+        const filtered = await applyClientSideFilter(originalImage)
+        setFilteredImage(filtered)
+        setError('Usando filtro local (sem IA). Resultado pode ser diferente.')
+      } catch (filterError) {
+        setError('Erro ao processar a imagem')
+      }
     } finally {
       setIsProcessing(false)
     }

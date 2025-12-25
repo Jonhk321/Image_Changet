@@ -21,19 +21,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Iniciando processamento com Hugging Face (GRÁTIS)...')
+    // Verificar se há token HF configurado (opcional)
+    const hfToken = process.env.HUGGINGFACE_TOKEN
+
+    if (!hfToken) {
+      return NextResponse.json(
+        {
+          error: 'API do Hugging Face requer token. Use o filtro client-side ou configure HUGGINGFACE_TOKEN nas variáveis de ambiente.',
+          useClientSide: true
+        },
+        { status: 400 }
+      )
+    }
+
+    console.log('Iniciando processamento com Hugging Face...')
 
     // Converter data URI para Blob
     const base64Data = image.split(',')[1]
     const binaryData = Buffer.from(base64Data, 'base64')
 
-    // Usar Hugging Face Inference API (100% GRATUITO!)
-    // Modelo: stable-diffusion com anime style
-    const HF_API_URL = 'https://router.huggingface.co/models/XpucT/Deliberate'
+    // Usar Hugging Face Inference API com autenticação
+    const HF_API_URL = 'https://api-inference.huggingface.co/models/XpucT/Deliberate'
 
     const response = await fetch(HF_API_URL, {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${hfToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -50,7 +63,6 @@ export async function POST(request: NextRequest) {
       const errorText = await response.text()
       console.error('Erro da Hugging Face:', errorText)
 
-      // Se o modelo está carregando, tentar novamente após alguns segundos
       if (response.status === 503) {
         return NextResponse.json(
           { error: 'Modelo está inicializando. Tente novamente em 10-20 segundos.' },
@@ -58,10 +70,16 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      if (response.status === 401) {
+        return NextResponse.json(
+          { error: 'Token inválido. Verifique seu token do Hugging Face.', useClientSide: true },
+          { status: 401 }
+        )
+      }
+
       throw new Error(`Erro ao processar: ${errorText}`)
     }
 
-    // Converter resposta para base64
     const imageBuffer = await response.arrayBuffer()
     const base64Image = Buffer.from(imageBuffer).toString('base64')
     const resultUrl = `data:image/png;base64,${base64Image}`
@@ -83,7 +101,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: errorMessage },
+      { error: errorMessage, useClientSide: true },
       { status: 500 }
     )
   }
