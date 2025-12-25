@@ -37,18 +37,21 @@ export async function POST(request: NextRequest) {
 
     console.log('Iniciando processamento com Replicate...')
 
-    // Usar modelo Toonify para conversão estilo anime/cartoon
-    // O modelo aceita data URIs diretamente
+    // Usar SDXL com img2img para conversão em anime
+    // Este modelo é público e amplamente usado
     const output = await replicate.run(
-      "fofr/sdxl-toonify:8cb7f5d8287ad1c7b7b66ba361b358ff6aa94f5e25b9a840fef34d88c6f11df3",
+      "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
       {
         input: {
-          image: image, // Data URI completo
-          prompt: "anime illustration style, beautiful, high quality, detailed",
-          negative_prompt: "photo, photorealistic, 3d render, blurry, low quality, ugly",
+          image: image,
+          prompt: "anime style, manga illustration, beautiful anime art, vibrant colors, detailed, high quality, professional anime artwork, studio quality",
+          negative_prompt: "realistic, photographic, photo, 3d render, blurry, low quality, ugly, distorted, deformed, nsfw",
+          num_outputs: 1,
+          num_inference_steps: 25,
           guidance_scale: 7.5,
-          num_inference_steps: 30,
-          strength: 0.8
+          prompt_strength: 0.8,
+          refine: "expert_ensemble_refiner",
+          scheduler: "K_EULER"
         }
       }
     ) as any
