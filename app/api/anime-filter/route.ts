@@ -20,45 +20,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const hfToken = process.env.HUGGINGFACE_TOKEN
-
-    if (!hfToken) {
-      return NextResponse.json(
-        { error: 'Token do Hugging Face não configurado', useClientSide: true },
-        { status: 400 }
-      )
-    }
-
-    console.log('Processando com modelo anime profissional...')
+    console.log('Processando com AnimeGANv2 (modelo gratuito)...')
 
     // Converter data URI para buffer
     const base64Data = image.split(',')[1]
-    const imageBuffer = Buffer.from(base64Data, 'base64')
 
-    // Usar modelo AnimeGAN para conversão profissional
-    const HF_API_URL = 'https://api-inference.huggingface.co/models/cagliostrolab/animagine-xl-3.1'
+    // Usar API do Hugging Face Spaces com modelo anime dedicado
+    // AnimeGANv2 é específico para transformação foto->anime
+    const HF_SPACE_API = 'https://akhaliq-animeganv2.hf.space/api/predict'
 
-    const response = await fetch(HF_API_URL, {
+    const response = await fetch(HF_SPACE_API, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${hfToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputs: imageBuffer.toString('base64'),
-        parameters: {
-          prompt: "anime illustration, professional digital art, vibrant colors, detailed anime style, high quality anime artwork, beautiful illustration, masterpiece",
-          negative_prompt: "realistic, photo, photograph, 3d, blurry, low quality, watermark, text",
-          num_inference_steps: 50,
-          guidance_scale: 7.5,
-          strength: 0.75,
-        }
+        data: [`data:image/jpeg;base64,${base64Data}`]
       }),
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Erro HuggingFace:', errorText)
+      console.error('Erro HuggingFace Space:', errorText)
 
       if (response.status === 503) {
         return NextResponse.json(
@@ -70,11 +53,16 @@ export async function POST(request: NextRequest) {
       throw new Error(`Erro: ${response.status}`)
     }
 
-    const resultBuffer = await response.arrayBuffer()
-    const base64Result = Buffer.from(resultBuffer).toString('base64')
-    const resultUrl = `data:image/png;base64,${base64Result}`
+    const result = await response.json()
 
-    console.log('Processamento concluído!')
+    // Gradio retorna { data: [imageDataUrl] }
+    if (!result.data || !result.data[0]) {
+      throw new Error('Resposta inválida do modelo')
+    }
+
+    const resultUrl = result.data[0]
+
+    console.log('Processamento concluído com AnimeGANv2!')
 
     return NextResponse.json({ output: resultUrl })
   } catch (error: any) {

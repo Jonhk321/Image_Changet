@@ -2,16 +2,16 @@
 
 Uma aplicação web moderna que transforma suas fotos em ilustrações estilo anime com **DUAS OPÇÕES**:
 - ⚡ **Filtro instantâneo** (client-side, sem configuração)
-- 🤖 **IA profissional** (Hugging Face, token gratuito opcional)
+- 🤖 **IA profissional AnimeGANv2** (Hugging Face, totalmente gratuito e sem configuração)
 
 ## ✨ Destaques
 
 - 🆓 **100% GRATUITO** - Funciona sem configuração nenhuma!
 - ⚡ **Instantâneo** - Filtro client-side processa em segundos
-- 🤖 **IA Opcional** - Use Hugging Face para qualidade superior (gratuito)
+- 🤖 **IA Real** - AnimeGANv2 para transformação profissional (gratuito, sem token)
 - 🚀 **Deploy Fácil** - Um clique no Vercel
 - 📱 **Responsivo** - Funciona perfeitamente em mobile e desktop
-- 🔒 **Privado** - Processamento local ou via API
+- 🔒 **Privado** - Processamento local ou via API pública
 
 ## Funcionalidades
 
@@ -28,7 +28,8 @@ Uma aplicação web moderna que transforma suas fotos em ilustrações estilo an
 - **Next.js 14** - Framework React com App Router
 - **TypeScript** - Tipagem estática
 - **Tailwind CSS** - Estilização moderna
-- **Hugging Face Inference API** - IA gratuita para transformação em anime
+- **AnimeGANv2** - IA especializada em transformação foto→anime
+- **Hugging Face Spaces** - API pública gratuita
 - **Vercel** - Hospedagem gratuita
 
 ## Como Funciona
@@ -41,13 +42,13 @@ A aplicação oferece **DUAS OPÇÕES**:
 - 🎨 **Bom resultado** - Efeito anime/cartoon
 - 📱 **Totalmente offline** - Processa no navegador
 
-### Opção 2: IA do Hugging Face (Opcional)
-- 🤖 **Qualidade superior** - IA profissional
-- 🆓 **Gratuito** - Token gratuito do Hugging Face
-- ⏱️ **30-60 segundos** - Processamento via API
-- 🎯 **Resultado realista** - Estilo anime autêntico
+### Opção 2: IA AnimeGANv2 (Automático)
+- 🤖 **Qualidade profissional** - AnimeGANv2 treinado especificamente para foto→anime
+- 🆓 **Gratuito sem configuração** - API pública do Hugging Face
+- ⏱️ **10-30 segundos** - Processamento via API
+- 🎯 **Resultado autêntico** - Estilo anime de verdade
 
-**A aplicação escolhe automaticamente:** Se não houver token configurado, usa o filtro instantâneo!
+**A aplicação tenta a IA primeiro!** Se a API estiver ocupada, usa o filtro local como fallback.
 
 ## Instalação Local
 
@@ -71,27 +72,16 @@ Abra [http://localhost:3000](http://localhost:3000) no navegador.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
 
-### Deploy Básico (Filtro Instantâneo):
+### Deploy (3 passos simples):
 
 1. Faça push do código para seu repositório GitHub
 2. Acesse [vercel.com](https://vercel.com) e faça login
 3. Clique em "New Project" e importe seu repositório
 4. Clique em "Deploy"
 
-**Pronto! Funciona instantaneamente!** ✨
+**Pronto! Funciona com IA profissional instantaneamente!** ✨
 
-### Deploy Avançado (Com IA do Hugging Face):
-
-Se quiser qualidade superior com IA:
-
-1. Crie conta em [huggingface.co](https://huggingface.co) (grátis)
-2. Gere token em: [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
-3. No Vercel, adicione variável de ambiente:
-   - **Name:** `HUGGINGFACE_TOKEN`
-   - **Value:** Seu token
-4. Redeploy
-
-**Ambas opções são 100% gratuitas!**
+Não precisa configurar tokens ou variáveis de ambiente. A IA AnimeGANv2 funciona através de API pública gratuita!
 
 ## Como Usar
 
@@ -126,16 +116,17 @@ npm run lint     # Linter
 
 ## Comparação: Filtro vs IA
 
-| Característica | Filtro Client-Side | IA Hugging Face |
+| Característica | Filtro Client-Side | IA AnimeGANv2 |
 |---------------|-------------------|-----------------|
-| **Velocidade** | ⚡ 1-2 segundos | ⏱️ 30-60 segundos |
-| **Configuração** | ✅ Nenhuma | 📝 Token gratuito |
+| **Velocidade** | ⚡ 1-2 segundos | ⏱️ 10-30 segundos |
+| **Configuração** | ✅ Nenhuma | ✅ Nenhuma |
 | **Qualidade** | 🎨 Boa | 🤖 Excelente |
 | **Custo** | 🆓 Grátis | 🆓 Grátis |
 | **Offline** | ✅ Funciona | ❌ Precisa internet |
-| **Melhor para** | Testes rápidos | Resultado final |
+| **Tipo** | Filtro de cores | Transformação real |
+| **Melhor para** | Preview rápido | Resultado final |
 
-**Recomendação:** Comece com o filtro instantâneo, depois adicione o token para IA se quiser qualidade superior!
+**Recomendação:** A aplicação usa automaticamente a IA AnimeGANv2. Se a API estiver ocupada, cai para o filtro local!
 
 ## Problemas Comuns
 
@@ -156,10 +147,11 @@ npm run lint     # Linter
 
 ## Custos
 
-### Hugging Face:
+### AnimeGANv2 (Hugging Face Spaces):
 - **GRATUITO** ✨
-- Sem limites de crédito
+- API pública sem limites
 - Sem necessidade de cadastro ou autenticação
+- Sem configuração de tokens
 
 ### Vercel:
 - **GRATUITO** (plano Hobby)

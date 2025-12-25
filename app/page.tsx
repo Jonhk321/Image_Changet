@@ -226,7 +226,7 @@ export default function Home() {
         console.log('API falhou, usando filtro local...')
         const filtered = await applyClientSideFilter(originalImage)
         setFilteredImage(filtered)
-        setError('Usando filtro local. Configure o token HF para IA profissional.')
+        setError('API temporariamente indisponível. Usando filtro local.')
         return
       }
 
