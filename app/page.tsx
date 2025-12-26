@@ -371,7 +371,27 @@ export default function Home() {
         return
       }
 
-      // NÍVEL 2: APIs falharam - usar AnimeGAN.js (IA real no navegador)
+      // NÍVEL 2: APIs falharam - TEMPORARIAMENTE DESABILITANDO AnimeGAN
+      // TODO: Investigar por que AnimeGAN causa crash/reload
+      console.log('⚠️ APIs indisponíveis. AnimeGAN DESABILITADO temporariamente.')
+      console.log('🎨 Usando filtro básico...')
+      setProcessingMethod('🎨 Usando filtro básico (AnimeGAN desabilitado)...')
+      setProgress(0.5)
+
+      try {
+        const filtered = await applyClientSideFilter(originalImage)
+        console.log('✅ Filtro básico completou!')
+        setFilteredImage(filtered)
+        setProcessingMethod('✅ Processado com filtro básico')
+        setError('ℹ️ APIs indisponíveis. Usando filtro básico (AnimeGAN temporariamente desabilitado).')
+        setProgress(1.0)
+      } catch (filterError: any) {
+        console.error('❌ Filtro básico falhou:', filterError)
+        setError('❌ Erro ao processar com filtro básico: ' + filterError.message)
+        setProgress(0)
+      }
+
+      /* NÍVEL 2 ORIGINAL - AnimeGAN.js (DESABILITADO - causando crash)
       console.log('APIs indisponíveis, usando AnimeGAN.js (IA local)...')
       setProcessingMethod('🤖 Usando AnimeGAN.js (IA real no navegador)...')
       setProgress(0.2)
@@ -429,6 +449,7 @@ export default function Home() {
         setError('⚠️ APIs e AnimeGAN indisponíveis. Usando filtro básico (qualidade reduzida).')
         setProgress(1.0)
       }
+      */
 
     } catch (error: any) {
       console.error('Erro:', error)
