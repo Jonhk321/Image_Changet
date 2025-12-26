@@ -111,7 +111,7 @@ export async function transformToAnime(
     if (onProgress) onProgress(0.4)
     console.log('3️⃣ Convertendo imagem para tensor...')
 
-    imgTensor = tf.browser.fromPixels(img)
+    imgTensor = tf.browser.fromPixels(img) as tf.Tensor3D
     console.log('Tamanho original:', imgTensor.shape)
 
     // Redimensionar se necessário
@@ -126,7 +126,7 @@ export async function transformToAnime(
       ]
       console.log('Redimensionando para:', scaledSize)
       scaledTensor = tf.tidy(() =>
-        tf.image.resizeBilinear(imgTensor!, scaledSize as [number, number])
+        tf.image.resizeBilinear(imgTensor as tf.Tensor3D, scaledSize as [number, number])
           .expandDims(0)
           .div(255)
       )
