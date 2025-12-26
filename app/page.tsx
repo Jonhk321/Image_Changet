@@ -90,78 +90,142 @@ export default function Home() {
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
         const data = imgData.data
 
-        // FILTRO ANIME AVANÇADO - Múltiplos passos para qualidade superior
+        console.log('🎨 Aplicando filtro anime profissional...')
 
-        // Passo 1: Suavização de pele (tons de pele)
-        for (let y = 1; y < canvas.height - 1; y++) {
-          for (let x = 1; x < canvas.width - 1; x++) {
+        // ===== PASSO 1: BILATERAL FILTER (Suavização preservando bordas) =====
+        console.log('  📊 Passo 1/8: Bilateral filter')
+        const originalData = new Uint8ClampedArray(data)
+        const radius = 3
+        const sigmaColor = 30
+        const sigmaSpace = 20
+
+        for (let y = radius; y < canvas.height - radius; y++) {
+          for (let x = radius; x < canvas.width - radius; x++) {
             const i = (y * canvas.width + x) * 4
-            const r = data[i]
-            const g = data[i + 1]
-            const b = data[i + 2]
+            let totalR = 0, totalG = 0, totalB = 0, totalWeight = 0
 
-            // Detectar tons de pele
-            if (r > 95 && g > 40 && b > 20 && r > g && r > b) {
-              // Aplicar blur suave
-              let avgR = 0, avgG = 0, avgB = 0, count = 0
-              for (let dy = -1; dy <= 1; dy++) {
-                for (let dx = -1; dx <= 1; dx++) {
-                  const ni = ((y + dy) * canvas.width + (x + dx)) * 4
-                  avgR += data[ni]
-                  avgG += data[ni + 1]
-                  avgB += data[ni + 2]
-                  count++
-                }
+            const centerR = originalData[i]
+            const centerG = originalData[i + 1]
+            const centerB = originalData[i + 2]
+
+            for (let dy = -radius; dy <= radius; dy++) {
+              for (let dx = -radius; dx <= radius; dx++) {
+                const ni = ((y + dy) * canvas.width + (x + dx)) * 4
+                const nr = originalData[ni]
+                const ng = originalData[ni + 1]
+                const nb = originalData[ni + 2]
+
+                const colorDist = Math.sqrt(
+                  Math.pow(nr - centerR, 2) +
+                  Math.pow(ng - centerG, 2) +
+                  Math.pow(nb - centerB, 2)
+                )
+                const spatialDist = Math.sqrt(dx * dx + dy * dy)
+
+                const colorWeight = Math.exp(-(colorDist * colorDist) / (2 * sigmaColor * sigmaColor))
+                const spatialWeight = Math.exp(-(spatialDist * spatialDist) / (2 * sigmaSpace * sigmaSpace))
+                const weight = colorWeight * spatialWeight
+
+                totalR += nr * weight
+                totalG += ng * weight
+                totalB += nb * weight
+                totalWeight += weight
               }
-              data[i] = (data[i] + avgR / count) / 2
-              data[i + 1] = (data[i + 1] + avgG / count) / 2
-              data[i + 2] = (data[i + 2] + avgB / count) / 2
             }
+
+            data[i] = totalR / totalWeight
+            data[i + 1] = totalG / totalWeight
+            data[i + 2] = totalB / totalWeight
           }
         }
 
-        // Passo 2: Posterização inteligente (redução de cores)
+        // ===== PASSO 2: QUANTIZAÇÃO DE CORES (Paleta Anime) =====
+        console.log('  🎨 Passo 2/8: Quantização de cores')
+        const colorLevels = 12 // Menos níveis = mais estilo anime
         for (let i = 0; i < data.length; i += 4) {
-          const levels = 20 // Mais níveis para transição suave
-          data[i] = Math.round(data[i] / levels) * levels
-          data[i + 1] = Math.round(data[i + 1] / levels) * levels
-          data[i + 2] = Math.round(data[i + 2] / levels) * levels
+          data[i] = Math.round(data[i] / (255 / colorLevels)) * (255 / colorLevels)
+          data[i + 1] = Math.round(data[i + 1] / (255 / colorLevels)) * (255 / colorLevels)
+          data[i + 2] = Math.round(data[i + 2] / (255 / colorLevels)) * (255 / colorLevels)
         }
 
-        // Passo 3: Aumentar saturação e vibração
+        // ===== PASSO 3: SATURAÇÃO ANIME (Cores vibrantes) =====
+        console.log('  🌈 Passo 3/8: Saturação anime')
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i]
           const g = data[i + 1]
           const b = data[i + 2]
 
-          const gray = 0.299 * r + 0.587 * g + 0.114 * b
-          const saturation = 1.6 // Saturação forte
+          // Converter para HSL
+          const max = Math.max(r, g, b) / 255
+          const min = Math.min(r, g, b) / 255
+          const l = (max + min) / 2
 
-          data[i] = Math.min(255, Math.max(0, gray + saturation * (r - gray)))
-          data[i + 1] = Math.min(255, Math.max(0, gray + saturation * (g - gray)))
-          data[i + 2] = Math.min(255, Math.max(0, gray + saturation * (b - gray)))
+          if (max !== min) {
+            const d = max - min
+            const s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+
+            // Aumentar saturação dramaticamente
+            const newS = Math.min(1, s * 1.8)
+
+            // Converter de volta para RGB
+            const hue = max === r / 255
+              ? ((g / 255 - b / 255) / d + (g < b ? 6 : 0)) / 6
+              : max === g / 255
+              ? ((b / 255 - r / 255) / d + 2) / 6
+              : ((r / 255 - g / 255) / d + 4) / 6
+
+            const q = l < 0.5 ? l * (1 + newS) : l + newS - l * newS
+            const p = 2 * l - q
+
+            const hue2rgb = (p: number, q: number, t: number) => {
+              if (t < 0) t += 1
+              if (t > 1) t -= 1
+              if (t < 1/6) return p + (q - p) * 6 * t
+              if (t < 1/2) return q
+              if (t < 2/3) return p + (q - p) * (2/3 - t) * 6
+              return p
+            }
+
+            data[i] = hue2rgb(p, q, hue + 1/3) * 255
+            data[i + 1] = hue2rgb(p, q, hue) * 255
+            data[i + 2] = hue2rgb(p, q, hue - 1/3) * 255
+          }
         }
 
-        // Passo 4: Aumentar contraste
+        // ===== PASSO 4: CELL SHADING (Sombreamento estilo anime) =====
+        console.log('  💡 Passo 4/8: Cell shading')
         for (let i = 0; i < data.length; i += 4) {
-          const contrast = 1.3
-          const factor = (259 * (contrast * 100 + 255)) / (255 * (259 - contrast * 100))
+          const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3
 
+          // Definir limites para sombreamento
+          let shadingFactor = 1.0
+          if (brightness < 85) {
+            shadingFactor = 0.6 // Sombra escura
+          } else if (brightness < 170) {
+            shadingFactor = 0.85 // Meia sombra
+          } else {
+            shadingFactor = 1.15 // Realce
+          }
+
+          data[i] = Math.min(255, data[i] * shadingFactor)
+          data[i + 1] = Math.min(255, data[i + 1] * shadingFactor)
+          data[i + 2] = Math.min(255, data[i + 2] * shadingFactor)
+        }
+
+        // ===== PASSO 5: CONTRAST ENHANCEMENT (Contraste dramático) =====
+        console.log('  ⚡ Passo 5/8: Contraste')
+        const contrast = 1.4
+        const factor = (259 * (contrast * 100 + 255)) / (255 * (259 - contrast * 100))
+        for (let i = 0; i < data.length; i += 4) {
           data[i] = Math.min(255, Math.max(0, factor * (data[i] - 128) + 128))
           data[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128))
           data[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128))
         }
 
-        // Passo 5: Brightening (iluminação)
-        for (let i = 0; i < data.length; i += 4) {
-          data[i] = Math.min(255, data[i] * 1.1)
-          data[i + 1] = Math.min(255, data[i + 1] * 1.1)
-          data[i + 2] = Math.min(255, data[i + 2] * 1.1)
-        }
-
         ctx.putImageData(imgData, 0, 0)
 
-        // Passo 6: Edge enhancement (contornos)
+        // ===== PASSO 6: EDGE DETECTION & OUTLINING (Contornos anime) =====
+        console.log('  ✏️ Passo 6/8: Detecção de bordas')
         const tempCanvas = document.createElement('canvas')
         const tempCtx = tempCanvas.getContext('2d')
         if (tempCtx) {
@@ -172,27 +236,32 @@ export default function Home() {
           const imageData2 = tempCtx.getImageData(0, 0, canvas.width, canvas.height)
           const data2 = imageData2.data
 
-          // Detectar bordas
+          // Sobel operator aprimorado para bordas anime
           for (let y = 1; y < canvas.height - 1; y++) {
             for (let x = 1; x < canvas.width - 1; x++) {
               const i = (y * canvas.width + x) * 4
 
-              // Sobel operator
-              const gx =
-                -data2[((y-1)*canvas.width + (x-1))*4] + data2[((y-1)*canvas.width + (x+1))*4] +
-                -2*data2[(y*canvas.width + (x-1))*4] + 2*data2[(y*canvas.width + (x+1))*4] +
-                -data2[((y+1)*canvas.width + (x-1))*4] + data2[((y+1)*canvas.width + (x+1))*4]
+              // Calcular gradiente em cada canal de cor
+              let totalGradient = 0
+              for (let c = 0; c < 3; c++) {
+                const gx =
+                  -data2[((y-1)*canvas.width + (x-1))*4 + c] + data2[((y-1)*canvas.width + (x+1))*4 + c] +
+                  -2*data2[(y*canvas.width + (x-1))*4 + c] + 2*data2[(y*canvas.width + (x+1))*4 + c] +
+                  -data2[((y+1)*canvas.width + (x-1))*4 + c] + data2[((y+1)*canvas.width + (x+1))*4 + c]
 
-              const gy =
-                -data2[((y-1)*canvas.width + (x-1))*4] - 2*data2[((y-1)*canvas.width + x)*4] - data2[((y-1)*canvas.width + (x+1))*4] +
-                data2[((y+1)*canvas.width + (x-1))*4] + 2*data2[((y+1)*canvas.width + x)*4] + data2[((y+1)*canvas.width + (x+1))*4]
+                const gy =
+                  -data2[((y-1)*canvas.width + (x-1))*4 + c] - 2*data2[((y-1)*canvas.width + x)*4 + c] - data2[((y-1)*canvas.width + (x+1))*4 + c] +
+                  data2[((y+1)*canvas.width + (x-1))*4 + c] + 2*data2[((y+1)*canvas.width + x)*4 + c] + data2[((y+1)*canvas.width + (x+1))*4 + c]
 
-              const magnitude = Math.sqrt(gx*gx + gy*gy)
+                totalGradient += Math.sqrt(gx*gx + gy*gy)
+              }
 
-              if (magnitude > 50) { // Borda detectada
-                imgData.data[i] = Math.max(0, imgData.data[i] - 30)
-                imgData.data[i+1] = Math.max(0, imgData.data[i+1] - 30)
-                imgData.data[i+2] = Math.max(0, imgData.data[i+2] - 30)
+              // Bordas fortes = contornos anime (pretos)
+              if (totalGradient > 80) {
+                const strength = Math.min(1, totalGradient / 150)
+                imgData.data[i] = imgData.data[i] * (1 - strength * 0.7)
+                imgData.data[i+1] = imgData.data[i+1] * (1 - strength * 0.7)
+                imgData.data[i+2] = imgData.data[i+2] * (1 - strength * 0.7)
               }
             }
           }
@@ -200,7 +269,46 @@ export default function Home() {
           ctx.putImageData(imgData, 0, 0)
         }
 
-        resolve(canvas.toDataURL('image/png', 0.95))
+        // ===== PASSO 7: AJUSTE DE BRILHO (Iluminação anime) =====
+        console.log('  ☀️ Passo 7/8: Ajuste de brilho')
+        const finalData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        for (let i = 0; i < finalData.data.length; i += 4) {
+          finalData.data[i] = Math.min(255, finalData.data[i] * 1.12)
+          finalData.data[i + 1] = Math.min(255, finalData.data[i + 1] * 1.12)
+          finalData.data[i + 2] = Math.min(255, finalData.data[i + 2] * 1.12)
+        }
+        ctx.putImageData(finalData, 0, 0)
+
+        // ===== PASSO 8: SHARPENING (Nitidez final) =====
+        console.log('  🔍 Passo 8/8: Sharpening')
+        const sharpenData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const sharpenKernel = [
+          0, -0.5, 0,
+          -0.5, 3, -0.5,
+          0, -0.5, 0
+        ]
+
+        for (let y = 1; y < canvas.height - 1; y++) {
+          for (let x = 1; x < canvas.width - 1; x++) {
+            for (let c = 0; c < 3; c++) {
+              let sum = 0
+              let ki = 0
+              for (let ky = -1; ky <= 1; ky++) {
+                for (let kx = -1; kx <= 1; kx++) {
+                  const pixelIndex = ((y + ky) * canvas.width + (x + kx)) * 4 + c
+                  sum += finalData.data[pixelIndex] * sharpenKernel[ki]
+                  ki++
+                }
+              }
+              const i = (y * canvas.width + x) * 4 + c
+              sharpenData.data[i] = Math.min(255, Math.max(0, sum))
+            }
+          }
+        }
+        ctx.putImageData(sharpenData, 0, 0)
+
+        console.log('✨ Filtro anime profissional aplicado com sucesso!')
+        resolve(canvas.toDataURL('image/png', 0.98))
       }
       img.src = imageData
     })
