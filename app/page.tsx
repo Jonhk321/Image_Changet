@@ -1,8 +1,11 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { transformToAnime } from '@/lib/animeganModel'
 
 export default function Home() {
+  const [processingMethod, setProcessingMethod] = useState<string>('')
+  const [progress, setProgress] = useState<number>(0)
   const [originalImage, setOriginalImage] = useState<string | null>(null)
   const [filteredImage, setFilteredImage] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -319,9 +322,13 @@ export default function Home() {
 
     setIsProcessing(true)
     setError(null)
+    setProgress(0)
 
     try {
-      // Tentar API com múltiplos endpoints
+      // NÍVEL 1: Tentar APIs do HuggingFace (mais rápido se funcionar)
+      setProcessingMethod('🌐 Tentando APIs HuggingFace...')
+      setProgress(0.1)
+
       const response = await fetch('/api/anime-filter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -330,28 +337,64 @@ export default function Home() {
 
       const data = await response.json()
 
-      if (!response.ok && data.useClientSide) {
-        console.log('Todas as APIs falharam, usando filtro local...')
-        const filtered = await applyClientSideFilter(originalImage)
-        setFilteredImage(filtered)
-        setError('⚠️ APIs de IA indisponíveis. Usando filtro local (qualidade reduzida).')
+      if (response.ok) {
+        // API funcionou!
+        setFilteredImage(data.output)
+        setProcessingMethod('✅ Processado com API HuggingFace')
+        setError(null)
+        setProgress(1.0)
         return
       }
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao processar')
-      }
+      // NÍVEL 2: APIs falharam - usar AnimeGAN.js (IA real no navegador)
+      console.log('APIs indisponíveis, usando AnimeGAN.js (IA local)...')
+      setProcessingMethod('🤖 Usando AnimeGAN.js (IA real no navegador)...')
+      setProgress(0.2)
 
-      setFilteredImage(data.output)
-      setError(null) // Limpar erro se sucesso
-    } catch (error: any) {
-      console.error('Erro:', error)
       try {
+        const animeResult = await transformToAnime(originalImage, {
+          maxSize: 512,
+          onProgress: (p) => {
+            setProgress(0.2 + p * 0.7) // 20% to 90%
+          }
+        })
+
+        setFilteredImage(animeResult)
+        setProcessingMethod('✅ Processado com AnimeGAN.js (IA real)')
+        setError('ℹ️ APIs indisponíveis. Processado com AnimeGAN local (IA real, levou mais tempo mas qualidade máxima!).')
+        setProgress(1.0)
+        return
+
+      } catch (animeError: any) {
+        console.error('AnimeGAN falhou:', animeError)
+
+        // NÍVEL 3: Fallback para filtro básico
+        console.log('AnimeGAN falhou, usando filtro básico...')
+        setProcessingMethod('🎨 Usando filtro básico...')
+        setProgress(0.9)
+
         const filtered = await applyClientSideFilter(originalImage)
         setFilteredImage(filtered)
-        setError('⚠️ Erro de conexão. Usando filtro local.')
+        setProcessingMethod('✅ Processado com filtro básico')
+        setError('⚠️ APIs e AnimeGAN indisponíveis. Usando filtro básico (qualidade reduzida).')
+        setProgress(1.0)
+      }
+
+    } catch (error: any) {
+      console.error('Erro:', error)
+
+      // Fallback final em caso de erro de rede
+      try {
+        setProcessingMethod('🎨 Erro de conexão - usando filtro básico...')
+        const filtered = await applyClientSideFilter(originalImage)
+        setFilteredImage(filtered)
+        setProcessingMethod('✅ Processado com filtro básico')
+        setError('⚠️ Erro de conexão. Usando filtro básico.')
+        setProgress(1.0)
       } catch {
         setError('❌ Erro ao processar a imagem')
+        setProcessingMethod('')
+        setProgress(0)
       }
     } finally {
       setIsProcessing(false)
@@ -450,6 +493,27 @@ export default function Home() {
                   </>
                 )}
               </div>
+
+              {/* Progress Indicator */}
+              {isProcessing && (
+                <div className="mt-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">{processingMethod}</span>
+                    <span className="text-gray-600">{Math.round(progress * 100)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div
+                      className="bg-gradient-to-r from-purple-500 to-indigo-600 h-2.5 rounded-full transition-all duration-300"
+                      style={{ width: `${progress * 100}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500 text-center">
+                    {progress < 0.2 ? 'Tentando APIs externas...' :
+                     progress < 0.9 ? 'Processando com IA AnimeGAN (pode levar 10-20s)...' :
+                     'Finalizando...'}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}
