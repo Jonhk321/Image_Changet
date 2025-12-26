@@ -16,7 +16,11 @@ function mirrorPadFunc(input: tf.Tensor, pad_arr: number[][]) {
         slice_size = [-1, -1, -1, -1]
         slice_size[i] = pad_arr[i][1]
         slice_begin = [0, 0, 0, 0]
-        slice_begin[i] = result.shape[i] - pad_arr[i][1]
+        const shapeValue = result.shape[i]
+        if (shapeValue === undefined) {
+          throw new Error(`Shape dimension ${i} is undefined`)
+        }
+        slice_begin[i] = shapeValue - pad_arr[i][1]
 
         let padding_right = result.slice(slice_begin, slice_size)
 
@@ -132,7 +136,7 @@ export async function transformToAnime(
       )
     } else {
       scaledTensor = tf.tidy(() =>
-        imgTensor!.expandDims(0).div(255)
+        (imgTensor as tf.Tensor3D).expandDims(0).div(255)
       )
     }
 
@@ -171,7 +175,7 @@ export async function transformToAnime(
     ) as tf.Tensor3D
 
     console.log('Tensor de saída:', outputTensor.shape)
-    await tf.browser.toPixels(outputTensor, canvas)
+    await tf.browser.toPixels(outputTensor as tf.Tensor3D, canvas)
     console.log('✅ Canvas criado:', canvas.width, 'x', canvas.height)
 
     // 6. Retornar data URL
