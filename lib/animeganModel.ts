@@ -121,8 +121,8 @@ export async function transformToAnime(
     if (longSide > maxSize) {
       const scaleFactor = longSide / maxSize
       const scaledSize = [
-        Math.round(imgTensor.shape[0] / scaleFactor),
-        Math.round(imgTensor.shape[1] / scaleFactor)
+        Math.round(height / scaleFactor),
+        Math.round(width / scaleFactor)
       ]
       console.log('Redimensionando para:', scaledSize)
       scaledTensor = tf.tidy(() =>
