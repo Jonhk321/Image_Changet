@@ -138,7 +138,7 @@ export async function transformToAnime(
     const canvas = document.createElement('canvas')
     const outputTensor = tf.tidy(() =>
       generated.squeeze([0]).add(1).div(2)
-    )
+    ) as tf.Tensor3D
 
     await tf.browser.toPixels(outputTensor, canvas)
 
