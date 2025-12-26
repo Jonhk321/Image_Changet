@@ -115,7 +115,8 @@ export async function transformToAnime(
     console.log('Tamanho original:', imgTensor.shape)
 
     // Redimensionar se necessário
-    const longSide = Math.max(imgTensor.shape[0], imgTensor.shape[1])
+    const [height, width] = imgTensor.shape
+    const longSide = Math.max(height, width)
 
     if (longSide > maxSize) {
       const scaleFactor = longSide / maxSize
