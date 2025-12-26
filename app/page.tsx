@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { transformToAnime } from '@/lib/animeganModel'
 
 export default function Home() {
   const [processingMethod, setProcessingMethod] = useState<string>('')
@@ -350,8 +349,8 @@ export default function Home() {
     setProgress(0)
 
     try {
-      // NÍVEL 1: Tentar APIs do HuggingFace (mais rápido se funcionar)
-      setProcessingMethod('🌐 Tentando APIs HuggingFace...')
+      // NÍVEL 1: Tentar DeepAI Toonify API
+      setProcessingMethod('🎨 Tentando DeepAI Toonify...')
       setProgress(0.1)
 
       const response = await fetch('/api/anime-filter', {
@@ -363,19 +362,17 @@ export default function Home() {
       const data = await response.json()
 
       if (response.ok) {
-        // API funcionou!
+        // DeepAI funcionou!
         setFilteredImage(data.output)
-        setProcessingMethod('✅ Processado com API HuggingFace')
+        setProcessingMethod('✅ Processado com DeepAI Toonify')
         setError(null)
         setProgress(1.0)
         return
       }
 
-      // NÍVEL 2: APIs falharam - TEMPORARIAMENTE DESABILITANDO AnimeGAN
-      // TODO: Investigar por que AnimeGAN causa crash/reload
-      console.log('⚠️ APIs indisponíveis. AnimeGAN DESABILITADO temporariamente.')
-      console.log('🎨 Usando filtro básico...')
-      setProcessingMethod('🎨 Usando filtro básico (AnimeGAN desabilitado)...')
+      // NÍVEL 2: DeepAI falhou - usar filtro básico
+      console.log('⚠️ DeepAI indisponível. Usando filtro básico...')
+      setProcessingMethod('🎨 Usando filtro básico...')
       setProgress(0.5)
 
       try {
@@ -383,73 +380,13 @@ export default function Home() {
         console.log('✅ Filtro básico completou!')
         setFilteredImage(filtered)
         setProcessingMethod('✅ Processado com filtro básico')
-        setError('ℹ️ APIs indisponíveis. Usando filtro básico (AnimeGAN temporariamente desabilitado).')
+        setError('ℹ️ DeepAI indisponível. Usando filtro básico.')
         setProgress(1.0)
       } catch (filterError: any) {
         console.error('❌ Filtro básico falhou:', filterError)
         setError('❌ Erro ao processar com filtro básico: ' + filterError.message)
         setProgress(0)
       }
-
-      /* NÍVEL 2 ORIGINAL - AnimeGAN.js (DESABILITADO - causando crash)
-      console.log('APIs indisponíveis, usando AnimeGAN.js (IA local)...')
-      setProcessingMethod('🤖 Usando AnimeGAN.js (IA real no navegador)...')
-      setProgress(0.2)
-
-      try {
-        console.log('🚀 Iniciando AnimeGAN.js...')
-
-        // Reduzir tamanho para evitar problemas de memória
-        const animeResult = await Promise.race([
-          transformToAnime(originalImage, {
-            maxSize: 384, // Reduzido de 512 para economizar memória
-            onProgress: (p) => {
-              console.log(`📊 Progresso AnimeGAN: ${Math.round(p * 100)}%`)
-              try {
-                setProgress(0.2 + p * 0.7)
-              } catch (err) {
-                console.error('Erro ao atualizar progresso:', err)
-              }
-            }
-          }),
-          // Timeout de 60 segundos para evitar travamento
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout: AnimeGAN demorou mais de 60s')), 60000)
-          )
-        ])
-
-        console.log('✅ AnimeGAN completou! Resultado:', animeResult?.substring(0, 50))
-
-        // Usar setTimeout para garantir que o state update não cause problema
-        setTimeout(() => {
-          try {
-            setFilteredImage(animeResult)
-            setProcessingMethod('✅ Processado com AnimeGAN.js (IA real)')
-            setError('ℹ️ APIs indisponíveis. Processado com AnimeGAN local (IA real).')
-            setProgress(1.0)
-            console.log('✅ Estado atualizado com sucesso!')
-          } catch (stateError) {
-            console.error('❌ Erro ao atualizar estado:', stateError)
-          }
-        }, 100)
-        return
-
-      } catch (animeError: any) {
-        console.error('❌ AnimeGAN falhou:', animeError)
-        console.error('Stack:', animeError.stack)
-
-        // NÍVEL 3: Fallback para filtro básico
-        console.log('AnimeGAN falhou, usando filtro básico...')
-        setProcessingMethod('🎨 Usando filtro básico...')
-        setProgress(0.9)
-
-        const filtered = await applyClientSideFilter(originalImage)
-        setFilteredImage(filtered)
-        setProcessingMethod('✅ Processado com filtro básico')
-        setError('⚠️ APIs e AnimeGAN indisponíveis. Usando filtro básico (qualidade reduzida).')
-        setProgress(1.0)
-      }
-      */
 
     } catch (error: any) {
       console.error('Erro:', error)
