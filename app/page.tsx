@@ -379,20 +379,39 @@ export default function Home() {
       try {
         console.log('🚀 Iniciando AnimeGAN.js...')
 
-        const animeResult = await transformToAnime(originalImage, {
-          maxSize: 512,
-          onProgress: (p) => {
-            console.log(`📊 Progresso AnimeGAN: ${Math.round(p * 100)}%`)
-            setProgress(0.2 + p * 0.7) // 20% to 90%
-          }
-        })
+        // Reduzir tamanho para evitar problemas de memória
+        const animeResult = await Promise.race([
+          transformToAnime(originalImage, {
+            maxSize: 384, // Reduzido de 512 para economizar memória
+            onProgress: (p) => {
+              console.log(`📊 Progresso AnimeGAN: ${Math.round(p * 100)}%`)
+              try {
+                setProgress(0.2 + p * 0.7)
+              } catch (err) {
+                console.error('Erro ao atualizar progresso:', err)
+              }
+            }
+          }),
+          // Timeout de 60 segundos para evitar travamento
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout: AnimeGAN demorou mais de 60s')), 60000)
+          )
+        ])
 
-        console.log('✅ AnimeGAN completou! Setando imagem...')
-        setFilteredImage(animeResult)
-        setProcessingMethod('✅ Processado com AnimeGAN.js (IA real)')
-        setError('ℹ️ APIs indisponíveis. Processado com AnimeGAN local (IA real, levou mais tempo mas qualidade máxima!).')
-        setProgress(1.0)
-        console.log('✅ Estado atualizado com sucesso!')
+        console.log('✅ AnimeGAN completou! Resultado:', animeResult?.substring(0, 50))
+
+        // Usar setTimeout para garantir que o state update não cause problema
+        setTimeout(() => {
+          try {
+            setFilteredImage(animeResult)
+            setProcessingMethod('✅ Processado com AnimeGAN.js (IA real)')
+            setError('ℹ️ APIs indisponíveis. Processado com AnimeGAN local (IA real).')
+            setProgress(1.0)
+            console.log('✅ Estado atualizado com sucesso!')
+          } catch (stateError) {
+            console.error('❌ Erro ao atualizar estado:', stateError)
+          }
+        }, 100)
         return
 
       } catch (animeError: any) {
