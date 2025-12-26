@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { transformToAnime } from '@/lib/animeganModel'
 
 export default function Home() {
@@ -11,6 +11,31 @@ export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Capturar erros globais que podem estar causando reload
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('❌ ERRO GLOBAL CAPTURADO:', event.error)
+      event.preventDefault() // Previne reload
+      setError('❌ Erro crítico: ' + event.error?.message)
+      setIsProcessing(false)
+    }
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('❌ PROMISE REJECTION CAPTURADA:', event.reason)
+      event.preventDefault() // Previne reload
+      setError('❌ Erro assíncrono: ' + event.reason)
+      setIsProcessing(false)
+    }
+
+    window.addEventListener('error', handleError)
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    return () => {
+      window.removeEventListener('error', handleError)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    }
+  }, [])
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -352,21 +377,27 @@ export default function Home() {
       setProgress(0.2)
 
       try {
+        console.log('🚀 Iniciando AnimeGAN.js...')
+
         const animeResult = await transformToAnime(originalImage, {
           maxSize: 512,
           onProgress: (p) => {
+            console.log(`📊 Progresso AnimeGAN: ${Math.round(p * 100)}%`)
             setProgress(0.2 + p * 0.7) // 20% to 90%
           }
         })
 
+        console.log('✅ AnimeGAN completou! Setando imagem...')
         setFilteredImage(animeResult)
         setProcessingMethod('✅ Processado com AnimeGAN.js (IA real)')
         setError('ℹ️ APIs indisponíveis. Processado com AnimeGAN local (IA real, levou mais tempo mas qualidade máxima!).')
         setProgress(1.0)
+        console.log('✅ Estado atualizado com sucesso!')
         return
 
       } catch (animeError: any) {
-        console.error('AnimeGAN falhou:', animeError)
+        console.error('❌ AnimeGAN falhou:', animeError)
+        console.error('Stack:', animeError.stack)
 
         // NÍVEL 3: Fallback para filtro básico
         console.log('AnimeGAN falhou, usando filtro básico...')
