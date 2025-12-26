@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const maxDuration = 60
 
-// Lista de endpoints para tentar em ordem (fallback automático)
+// Lista EXTENDIDA de endpoints para tentar em ordem (fallback automático)
+// Quanto mais endpoints, maior a chance de um estar disponível!
 const ANIME_ENDPOINTS = [
+  // AnimeGANv2 - Variações oficiais
   {
-    name: 'AnimeGANv2 - Hayao',
+    name: 'AnimeGANv2 - Hayao (Ghibli)',
     url: 'https://akhaliq-animeganv2.hf.space/api/predict',
     format: 'gradio',
   },
@@ -19,32 +21,69 @@ const ANIME_ENDPOINTS = [
     url: 'https://huggingface.co/spaces/akhaliq/AnimeGANv2-Shinkai/api/predict',
     format: 'gradio',
   },
+  // URLs alternativas com domínios diferentes
+  {
+    name: 'AnimeGANv2 - Hayao (Mirror)',
+    url: 'https://akhaliq-animeganv2.hf.space/run/predict',
+    format: 'gradio',
+  },
+  {
+    name: 'AnimeGANv2 - Face Paint v2',
+    url: 'https://huggingface.co/spaces/akhaliq/AnimeGANv2-FacePaint_v2/api/predict',
+    format: 'gradio',
+  },
+  // Tentativas com endpoints públicos conhecidos
+  {
+    name: 'Anime Style Transfer',
+    url: 'https://hf.space/embed/TonyAssi/AnimeGANv2/api/predict',
+    format: 'gradio',
+  },
+  {
+    name: 'Cartoonify AI',
+    url: 'https://huggingface.co/spaces/Gradio-Blocks/Cartoonify/api/predict',
+    format: 'gradio',
+  },
 ]
 
 async function tryAnimeEndpoint(endpoint: typeof ANIME_ENDPOINTS[0], base64Data: string) {
   console.log(`Tentando ${endpoint.name}...`)
 
-  const response = await fetch(endpoint.url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      data: [`data:image/jpeg;base64,${base64Data}`]
-    }),
-  })
+  // Timeout de 20 segundos por endpoint
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 20000)
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`)
+  try {
+    const response = await fetch(endpoint.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        data: [`data:image/jpeg;base64,${base64Data}`]
+      }),
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+
+    const result = await response.json()
+
+    if (!result.data || !result.data[0]) {
+      throw new Error('Resposta inválida')
+    }
+
+    return result.data[0]
+  } catch (error: any) {
+    clearTimeout(timeoutId)
+    if (error.name === 'AbortError') {
+      throw new Error('Timeout (20s)')
+    }
+    throw error
   }
-
-  const result = await response.json()
-
-  if (!result.data || !result.data[0]) {
-    throw new Error('Resposta inválida')
-  }
-
-  return result.data[0]
 }
 
 export async function POST(request: NextRequest) {

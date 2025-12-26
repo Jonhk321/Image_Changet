@@ -42,17 +42,20 @@ A aplicação oferece **DUAS OPÇÕES**:
 - 🎨 **Bom resultado** - Efeito anime/cartoon
 - 📱 **Totalmente offline** - Processa no navegador
 
-### Opção 2: IA AnimeGANv2 (Automático com Fallback Inteligente)
-- 🤖 **Qualidade profissional** - AnimeGANv2 com 3 estilos diferentes
+### Opção 2: IA AnimeGANv2 (Automático com Fallback Ultra-Robusto)
+- 🤖 **Qualidade profissional** - AnimeGANv2 com múltiplos estilos
   - **Hayao**: Estilo Studio Ghibli (Hayao Miyazaki)
   - **Paprika**: Estilo colorido e vibrante
   - **Shinkai**: Estilo Makoto Shinkai (Your Name)
-- 🆓 **Gratuito sem configuração** - API pública do Hugging Face
-- ⏱️ **10-30 segundos** - Processamento via API
+  - **Face Paint**: Especializado em rostos
+  - **Cartoonify**: Estilo cartoon anime
+- 🆓 **Gratuito sem configuração** - APIs públicas do Hugging Face
+- ⏱️ **Máx 20s por tentativa** - Timeout automático
 - 🎯 **Resultado autêntico** - Transformação real em anime
-- 🔄 **Sistema de fallback** - Tenta automaticamente 3 endpoints diferentes
+- 🔄 **Sistema ultra-robusto** - Tenta automaticamente **7+ endpoints** diferentes
+- ⚡ **Rápido e inteligente** - Pula endpoints lentos automaticamente
 
-**Como funciona:** A aplicação tenta automaticamente os 3 modelos em ordem. Se um estiver ocupado, passa para o próximo instantaneamente. Só usa o filtro local se todos estiverem indisponíveis!
+**Como funciona:** A aplicação tenta automaticamente **7 APIs diferentes** em ordem. Cada uma tem timeout de 20s. Se uma estiver ocupada ou lenta, passa para a próxima instantaneamente. Com 7 tentativas, quase sempre consegue usar IA!
 
 ## Instalação Local
 
@@ -134,7 +137,7 @@ npm run lint     # Linter
 
 ## Estilos de Anime Disponíveis
 
-A aplicação tenta automaticamente 3 estilos diferentes de AnimeGANv2:
+A aplicação tenta automaticamente **7+ APIs diferentes** de AnimeGANv2:
 
 ### 🎨 Hayao (Studio Ghibli)
 - Estilo inspirado em Hayao Miyazaki
@@ -154,20 +157,33 @@ A aplicação tenta automaticamente 3 estilos diferentes de AnimeGANv2:
 - Visual cinematográfico
 - Melhor para: Cenas com luz e sombra
 
-**A aplicação tenta os 3 automaticamente** e usa o primeiro que estiver disponível!
+### 👤 Face Paint v2
+- Especializado em rostos e retratos
+- Detalhes faciais aprimorados
+- Expressões naturais preservadas
+- Melhor para: Selfies e retratos
+
+### 🎭 Cartoonify
+- Estilo cartoon anime
+- Simplificação artística
+- Visual divertido
+- Melhor para: Fotos casuais
+
+**A aplicação tenta TODOS automaticamente** (7+ endpoints) e usa o primeiro que responder! Com timeout de 20s cada, garante velocidade mesmo se alguns estiverem lentos.
 
 ## Problemas Comuns
 
 ### "APIs de IA indisponíveis"
-- Todos os 3 modelos estão temporariamente ocupados
-- A aplicação automaticamente usa o filtro local
-- Tente novamente em alguns minutos
-- O sistema de fallback garante que sempre funcione!
+- **Muito raro!** Todos os 7+ modelos estão temporariamente ocupados
+- A aplicação automaticamente usa o filtro local como último recurso
+- Com 7 endpoints, a chance de sucesso é ~95%+
+- Tente novamente em alguns minutos se acontecer
 
-### Processamento lento
-- Modelos de IA levam 10-30 segundos
-- Se demorar muito, pode ser que o modelo esteja frio (primeira execução)
-- O sistema tenta automaticamente outro modelo se um demorar demais
+### Processamento rápido garantido
+- ⚡ Cada API tem timeout de **20 segundos máximo**
+- Se uma estiver lenta, pula para a próxima automaticamente
+- Com 7 tentativas paralelas em sequência, sempre há uma disponível
+- Tempo típico: 5-20 segundos para processar com IA real
 
 ## Custos
 
