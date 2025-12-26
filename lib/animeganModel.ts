@@ -78,27 +78,43 @@ export async function transformToAnime(
   // Ativar modo de produção para melhor performance
   tf.enableProdMode()
 
+  let model: tfc.GraphModel | null = null
+  let imgTensor: tf.Tensor | null = null
+  let scaledTensor: tf.Tensor | null = null
+  let generated: tf.Tensor | null = null
+  let outputTensor: tf.Tensor | null = null
+
   try {
+    console.log('📊 Memória antes:', tf.memory())
+
     // 1. Carregar imagem
     if (onProgress) onProgress(0.1)
+    console.log('1️⃣ Carregando imagem...')
     const img = await loadImage(imageDataUrl)
+    console.log('✅ Imagem carregada:', img.width, 'x', img.height)
 
     // 2. Carregar modelo
     if (onProgress) onProgress(0.2)
-    console.log('📦 Carregando modelo AnimeGAN (~15MB)...')
+    console.log('2️⃣ Carregando modelo AnimeGAN (~15MB)...')
     const modelUrl = '/models/animegan/model.json'
-    const model = await tfc.loadGraphModel(modelUrl)
-    console.log('✅ Modelo carregado!')
+
+    try {
+      model = await tfc.loadGraphModel(modelUrl)
+      console.log('✅ Modelo carregado!')
+      console.log('📊 Memória após carregar modelo:', tf.memory())
+    } catch (modelError) {
+      console.error('❌ Erro ao carregar modelo:', modelError)
+      throw new Error('Falha ao carregar modelo AnimeGAN. Verifique se os arquivos estão no servidor.')
+    }
 
     // 3. Processar imagem
     if (onProgress) onProgress(0.4)
-    console.log('🖼️ Processando imagem...')
+    console.log('3️⃣ Convertendo imagem para tensor...')
 
-    const imgTensor = tf.browser.fromPixels(img)
+    imgTensor = tf.browser.fromPixels(img)
     console.log('Tamanho original:', imgTensor.shape)
 
     // Redimensionar se necessário
-    let scaledTensor: tf.Tensor
     const longSide = Math.max(imgTensor.shape[0], imgTensor.shape[1])
 
     if (longSide > maxSize) {
@@ -109,53 +125,79 @@ export async function transformToAnime(
       ]
       console.log('Redimensionando para:', scaledSize)
       scaledTensor = tf.tidy(() =>
-        tf.image.resizeBilinear(imgTensor, scaledSize as [number, number])
+        tf.image.resizeBilinear(imgTensor!, scaledSize as [number, number])
           .expandDims(0)
           .div(255)
       )
     } else {
       scaledTensor = tf.tidy(() =>
-        imgTensor.expandDims(0).div(255)
+        imgTensor!.expandDims(0).div(255)
       )
     }
 
     imgTensor.dispose()
+    imgTensor = null
+    console.log('✅ Tensor preparado:', scaledTensor.shape)
+    console.log('📊 Memória após preparar tensor:', tf.memory())
 
     // 4. Executar modelo
     if (onProgress) onProgress(0.5)
-    console.log('🚀 Executando AnimeGAN...')
+    console.log('4️⃣ Executando AnimeGAN (pode levar 10-20s)...')
     const startTime = performance.now()
 
-    const generated = await model.executeAsync({'test': scaledTensor}) as tf.Tensor
+    try {
+      generated = await model.executeAsync({'test': scaledTensor}) as tf.Tensor
+      console.log('✅ Modelo executado! Shape:', generated.shape)
+    } catch (execError) {
+      console.error('❌ Erro ao executar modelo:', execError)
+      throw new Error('Erro durante processamento com AnimeGAN: ' + execError)
+    }
 
     const elapsed = ((performance.now() - startTime) / 1000).toFixed(1)
     console.log(`✨ Transformação concluída em ${elapsed}s!`)
+    console.log('📊 Memória após execução:', tf.memory())
 
     scaledTensor.dispose()
+    scaledTensor = null
 
     // 5. Converter resultado para imagem
     if (onProgress) onProgress(0.9)
+    console.log('5️⃣ Convertendo resultado para imagem...')
+
     const canvas = document.createElement('canvas')
-    const outputTensor = tf.tidy(() =>
-      generated.squeeze([0]).add(1).div(2)
+    outputTensor = tf.tidy(() =>
+      generated!.squeeze([0]).add(1).div(2)
     ) as tf.Tensor3D
 
+    console.log('Tensor de saída:', outputTensor.shape)
     await tf.browser.toPixels(outputTensor, canvas)
-
-    generated.dispose()
-    outputTensor.dispose()
-    model.dispose()
+    console.log('✅ Canvas criado:', canvas.width, 'x', canvas.height)
 
     // 6. Retornar data URL
     if (onProgress) onProgress(1.0)
     const resultDataUrl = canvas.toDataURL('image/png', 0.95)
 
     console.log('✅ AnimeGAN: Transformação completa!')
+    console.log('📊 Memória final:', tf.memory())
+
     return resultDataUrl
 
   } catch (error) {
-    console.error('❌ Erro no AnimeGAN:', error)
+    console.error('❌ ERRO CRÍTICO no AnimeGAN:', error)
+    console.log('📊 Memória no erro:', tf.memory())
     throw error
+  } finally {
+    // Limpar TODOS os tensores e modelo
+    console.log('🧹 Limpando memória...')
+    if (generated) generated.dispose()
+    if (outputTensor) outputTensor.dispose()
+    if (scaledTensor) scaledTensor.dispose()
+    if (imgTensor) imgTensor.dispose()
+    if (model) model.dispose()
+
+    // Forçar garbage collection
+    tf.dispose()
+    console.log('📊 Memória após limpeza:', tf.memory())
   }
 }
 
