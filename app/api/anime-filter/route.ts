@@ -46,13 +46,16 @@ const ANIME_ENDPOINTS = [
 ]
 
 async function tryAnimeEndpoint(endpoint: typeof ANIME_ENDPOINTS[0], base64Data: string) {
-  console.log(`Tentando ${endpoint.name}...`)
+  console.log(`\n🔄 Tentando ${endpoint.name}...`)
+  console.log(`   URL: ${endpoint.url}`)
 
-  // Timeout de 20 segundos por endpoint
+  // Timeout de 25 segundos por endpoint
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 20000)
+  const timeoutId = setTimeout(() => controller.abort(), 25000)
 
   try {
+    const startTime = Date.now()
+
     const response = await fetch(endpoint.url, {
       method: 'POST',
       headers: {
@@ -64,24 +67,34 @@ async function tryAnimeEndpoint(endpoint: typeof ANIME_ENDPOINTS[0], base64Data:
       signal: controller.signal,
     })
 
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
     clearTimeout(timeoutId)
 
+    console.log(`   ⏱️  Resposta em ${elapsed}s - Status: ${response.status}`)
+
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
+      const errorText = await response.text()
+      console.log(`   ❌ Erro HTTP ${response.status}: ${errorText.substring(0, 200)}`)
+      throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`)
     }
 
     const result = await response.json()
+    console.log(`   📦 Resultado recebido:`, result ? 'OK' : 'VAZIO')
 
     if (!result.data || !result.data[0]) {
-      throw new Error('Resposta inválida')
+      console.log(`   ❌ Formato inválido:`, JSON.stringify(result).substring(0, 200))
+      throw new Error('Resposta inválida - sem data')
     }
 
+    console.log(`   ✅ SUCESSO com ${endpoint.name}!`)
     return result.data[0]
   } catch (error: any) {
     clearTimeout(timeoutId)
     if (error.name === 'AbortError') {
-      throw new Error('Timeout (20s)')
+      console.log(`   ⏰ Timeout após 25s`)
+      throw new Error('Timeout (25s)')
     }
+    console.log(`   ❌ Erro:`, error.message)
     throw error
   }
 }
@@ -104,31 +117,84 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Iniciando transformação anime com fallback multi-endpoint...')
+    console.log('\n═══════════════════════════════════════════')
+    console.log('🎨 Iniciando transformação anime')
+    console.log('═══════════════════════════════════════════')
 
     // Converter data URI para buffer
     const base64Data = image.split(',')[1]
+    const imageBuffer = Buffer.from(base64Data, 'base64')
 
-    // Tentar cada endpoint em ordem
+    console.log(`📊 Tamanho da imagem: ${(imageBuffer.length / 1024).toFixed(1)} KB`)
+
+    const hfToken = process.env.HUGGINGFACE_TOKEN
+
+    // PRIMEIRA TENTATIVA: API oficial do HuggingFace (se token disponível)
+    if (hfToken) {
+      console.log('\n🔑 Token HF encontrado! Tentando API oficial primeiro...')
+
+      const officialAPIs = [
+        'https://api-inference.huggingface.co/models/TachibanaYoshino/AnimeGANv2',
+        'https://api-inference.huggingface.co/models/akhaliq/AnimeGANv2',
+      ]
+
+      for (const apiUrl of officialAPIs) {
+        try {
+          console.log(`\n🔄 Tentando ${apiUrl}...`)
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${hfToken}`,
+            },
+            body: imageBuffer,
+          })
+
+          if (response.ok) {
+            const resultBlob = await response.arrayBuffer()
+            const base64Result = Buffer.from(resultBlob).toString('base64')
+            const resultUrl = `data:image/png;base64,${base64Result}`
+            console.log(`✅ SUCESSO com API oficial!`)
+            return NextResponse.json({ output: resultUrl })
+          } else {
+            const errorText = await response.text()
+            console.log(`❌ API oficial falhou (${response.status}): ${errorText.substring(0, 100)}`)
+          }
+        } catch (error: any) {
+          console.log(`❌ Erro na API oficial: ${error.message}`)
+        }
+      }
+    }
+
+    // SEGUNDA TENTATIVA: Espaços públicos do Gradio
+    console.log('\n🌐 Tentando espaços públicos do HuggingFace...')
     let lastError: Error | null = null
+    let attemptCount = 0
 
     for (const endpoint of ANIME_ENDPOINTS) {
+      attemptCount++
       try {
         const resultUrl = await tryAnimeEndpoint(endpoint, base64Data)
-        console.log(`✓ Sucesso com ${endpoint.name}!`)
+        console.log(`\n✅ ═══ SUCESSO! ═══`)
+        console.log(`   Endpoint vencedor: ${endpoint.name}`)
+        console.log(`   Tentativas necessárias: ${attemptCount}/${ANIME_ENDPOINTS.length}`)
         return NextResponse.json({ output: resultUrl })
       } catch (error: any) {
-        console.log(`✗ ${endpoint.name} falhou: ${error.message}`)
         lastError = error
         // Continua para o próximo endpoint
       }
     }
 
     // Se chegou aqui, todos os endpoints falharam
-    console.error('Todos os endpoints falharam, usando fallback client-side')
+    console.log('\n❌ ═══════════════════════════════════════════')
+    console.log('❌ TODAS AS APIs FALHARAM!')
+    console.log(`❌ Total de tentativas: ${hfToken ? attemptCount + 2 : attemptCount}`)
+    console.log(`❌ Último erro: ${lastError?.message}`)
+    console.log('❌ ═══════════════════════════════════════════')
+    console.log('⚠️  Usando fallback client-side...\n')
+
     return NextResponse.json(
       {
-        error: `Todas as APIs estão indisponíveis no momento. Último erro: ${lastError?.message}`,
+        error: `Todas as ${attemptCount + (hfToken ? 2 : 0)} APIs tentadas estão indisponíveis. Último erro: ${lastError?.message}`,
         useClientSide: true
       },
       { status: 503 }
